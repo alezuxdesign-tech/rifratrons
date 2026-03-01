@@ -9,7 +9,7 @@ const corsHeaders = {
 
 Deno.serve(async (req: Request) => {
   const { method } = req;
-  
+
   // Handle CORS preflight
   if (method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -35,7 +35,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!bodyRaffleId) {
-      return new Response(JSON.stringify({ error: 'Missing raffle_id' }), { 
+      return new Response(JSON.stringify({ error: 'Missing raffle_id' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -49,23 +49,23 @@ Deno.serve(async (req: Request) => {
     // 1. Generate Unique Code
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
     const expires_at = new Date();
-    expires_at.setHours(expires_at.getHours() + 24); 
+    expires_at.setHours(expires_at.getHours() + 24);
 
     const { error: codeError } = await supabase
       .from('raffle_codes')
       .insert([
-        { 
-          raffle_id: bodyRaffleId, 
-          code, 
-          expires_at: expires_at.toISOString() 
+        {
+          raffle_id: bodyRaffleId,
+          code,
+          expires_at: expires_at.toISOString()
         }
       ]);
 
     if (codeError) throw codeError;
 
     // 2. Build Destination URL
-    // TODO: REEMPLAZA ESTA URL CON TU DOMINIO REAL DE HOSTINGER (EJ: https://rifatrons.com)
-    const baseUrl = 'https://TU_DOMINIO_HOSTINGER.com'; 
+    // Use the FRONTEND_URL environment variable if set, otherwise fallback to the current Hostinger URL
+    const baseUrl = Deno.env.get('FRONTEND_URL') || 'https://darkgray-louse-764129.hostingersite.com';
     const finalUrl = `${baseUrl}/?code=${code}&raffle=${bodyRaffleId}`;
 
     // 3. Handle Redirect Mode
@@ -89,7 +89,7 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { 
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
