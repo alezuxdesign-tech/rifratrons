@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function UserPortal() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
-    const [code, setCode] = useState('');
+    const [password, setPassword] = useState('');
     const [results, setResults] = useState<any[] | null>(null);
     const [error, setError] = useState('');
     const [raffle, setRaffle] = useState<any>(null);
@@ -19,12 +19,23 @@ export default function UserPortal() {
         setRaffle(null);
 
         try {
-            // 1. Fetch participant entries
+            // 1. Sign in with Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: email.trim(),
+                password: password.trim(),
+            });
+
+            if (authError) {
+                setError('Credenciales incorrectas. ' + authError.message);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Fetch participant entries using the authenticated email
             const { data: participants, error: pError } = await supabase
                 .from('participants')
                 .select('*, raffles(*)')
-                .eq('email', email.trim().toLowerCase())
-                .eq('code', code.trim().toUpperCase());
+                .eq('email', authData.user.email);
 
             if (pError) throw pError;
 
@@ -82,14 +93,14 @@ export default function UserPortal() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código de Seguridad (Ticket)</label>
+                                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Contraseña</label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-4 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
                                     <input
-                                        type="text"
-                                        value={code}
-                                        onChange={(e) => setCode(e.target.value)}
-                                        placeholder=" ABC-123"
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Ingresa tu contraseña"
                                         className="premium-input pl-12 w-full"
                                         required
                                     />

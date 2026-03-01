@@ -59,6 +59,26 @@ export default function RafflePage() {
         setError('');
 
         try {
+            // Generate a random password for the user
+            const generatedPassword = Math.random().toString(36).slice(-8);
+            let isNewUser = false;
+
+            // Attempt to create the user account
+            const { error: signUpError } = await supabase.auth.signUp({
+                email: formData.email,
+                password: generatedPassword,
+            });
+
+            // If there's no error, or the error says the user already exists, we can proceed
+            // Note: In Supabase, if confirming email is enabled, it might require extra steps, but we assume it's disabled or auto-confirmed in this context
+            if (!signUpError) {
+                isNewUser = true;
+            } else if (signUpError.message && !signUpError.message.toLowerCase().includes('already registered')) {
+                // If it's an error OTHER than "User already exists", we should probably stop
+                console.error("Auth Error:", signUpError);
+                // We don't throw here to allow them to still get the ticket even if auth fails, but warn in console.
+            }
+
             const { data, error: rpcError } = await supabase.rpc('register_participant', {
                 p_raffle_id: raffle.id,
                 p_code: code,
@@ -80,7 +100,8 @@ export default function RafflePage() {
                         name: formData.name,
                         email: formData.email,
                         assigned_number: result.assigned_number,
-                        raffle_name: raffle.name
+                        raffle_name: raffle.name,
+                        password: isNewUser ? generatedPassword : null
                     }
                 }).catch(err => console.error('Error triggering email confirmation:', err));
             }

@@ -24,7 +24,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState({ name: '', total_numbers: 100000 });
+    const [newRaffle, setNewRaffle] = useState({ name: '', total_numbers: 100000, reserved_numbers: '' });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -105,15 +105,19 @@ export default function Dashboard() {
         if (!newRaffle.name) return;
         setCreating(true);
 
+        const reservedNumbersArray = newRaffle.reserved_numbers
+            ? newRaffle.reserved_numbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+            : [];
+
         const { error } = await supabase.from('raffles').insert([
-            { ...newRaffle, active: true }
+            { ...newRaffle, reserved_numbers: reservedNumbersArray, active: true }
         ]);
 
         if (error) {
             alert('Error al crear la rifa: ' + error.message);
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', total_numbers: 100000 });
+            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '' });
             fetchData();
         }
         setCreating(false);
@@ -124,12 +128,20 @@ export default function Dashboard() {
         if (!editingRaffle.name) return;
         setCreating(true);
 
+        let reservedNumbersArray = editingRaffle.reserved_numbers;
+        if (typeof reservedNumbersArray === 'string') {
+            reservedNumbersArray = reservedNumbersArray.split(',').map((n: string) => parseInt(n.trim())).filter((n: number) => !isNaN(n));
+        } else if (!Array.isArray(reservedNumbersArray)) {
+            reservedNumbersArray = [];
+        }
+
         const { error } = await supabase
             .from('raffles')
             .update({
                 name: editingRaffle.name,
                 active: editingRaffle.active,
-                total_numbers: editingRaffle.total_numbers
+                total_numbers: editingRaffle.total_numbers,
+                reserved_numbers: reservedNumbersArray
             })
             .eq('id', editingRaffle.id);
 
@@ -593,6 +605,18 @@ export default function Dashboard() {
                                     />
                                 </div>
 
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números Reservados (Separados por coma)</label>
+                                    <input
+                                        type="text"
+                                        value={newRaffle.reserved_numbers}
+                                        onChange={(e) => setNewRaffle({ ...newRaffle, reserved_numbers: e.target.value })}
+                                        placeholder="Ej: 0, 1, 2, 777"
+                                        className="premium-input w-full"
+                                    />
+                                    <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar. Ideal si no quieres que la rifa empiece desde el 0.</p>
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="glow-button w-full mt-4"
@@ -657,6 +681,18 @@ export default function Dashboard() {
                                         className="premium-input w-full"
                                         required
                                     />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números Reservados (Separados por coma)</label>
+                                    <input
+                                        type="text"
+                                        value={Array.isArray(editingRaffle.reserved_numbers) ? editingRaffle.reserved_numbers.join(', ') : editingRaffle.reserved_numbers || ''}
+                                        onChange={(e) => setEditingRaffle({ ...editingRaffle, reserved_numbers: e.target.value })}
+                                        placeholder="Ej: 0, 1, 2, 777"
+                                        className="premium-input w-full"
+                                    />
+                                    <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar.</p>
                                 </div>
 
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
