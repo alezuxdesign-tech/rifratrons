@@ -14,7 +14,8 @@ import {
     X,
     Sparkles,
     Zap,
-    Trophy
+    Trophy,
+    Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -31,6 +32,7 @@ export default function Dashboard() {
     const [selectedRaffle, setSelectedRaffle] = useState<any>(null);
     const [participants, setParticipants] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState('Resumen');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -217,9 +219,25 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0c] text-white flex font-sans overflow-hidden">
+            {/* Mobile Header (Visible only on small screens) */}
+            <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-white/5 z-40 flex items-center justify-between px-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                        <Activity className="text-white" size={16} />
+                    </div>
+                    <h1 className="font-display font-black tracking-tight text-xl text-gradient">RIFATRONS</h1>
+                </div>
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="p-2 text-white/60 hover:text-white"
+                >
+                    {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                </button>
+            </div>
+
             {/* Sidebar - Premium Design */}
-            <aside className="w-72 border-r border-white/5 bg-[#0d0d0f]/80 backdrop-blur-xl p-8 flex flex-col items-center">
-                <div className="flex items-center gap-4 mb-16 w-full">
+            <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-72 border-r border-white/5 bg-[#0d0d0f]/95 lg:bg-[#0d0d0f]/80 backdrop-blur-xl p-8 flex flex-col items-center transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                <div className="hidden lg:flex items-center gap-4 mb-16 w-full">
                     <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
                         <Activity className="text-white" size={24} />
                     </div>
@@ -229,13 +247,13 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <nav className="space-y-3 w-full flex-1">
-                    <NavItem icon={<BarChart3 size={20} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => setActiveTab('Resumen')} />
-                    <NavItem icon={<Ticket size={20} />} label="Mis Rifas" active={activeTab === 'Mis Rifas'} onClick={() => setActiveTab('Mis Rifas')} />
-                    <NavItem icon={<Users size={20} />} label="Participantes" active={activeTab === 'Participantes'} onClick={() => setActiveTab('Participantes')} />
-                    <NavItem icon={<TrendingUp size={20} />} label="Analíticas" active={activeTab === 'Analíticas'} onClick={() => setActiveTab('Analíticas')} />
+                <nav className="space-y-3 w-full flex-1 pt-8 lg:pt-0">
+                    <NavItem icon={<BarChart3 size={20} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => { setActiveTab('Resumen'); setIsMobileMenuOpen(false); }} />
+                    <NavItem icon={<Ticket size={20} />} label="Mis Rifas" active={activeTab === 'Mis Rifas'} onClick={() => { setActiveTab('Mis Rifas'); setIsMobileMenuOpen(false); }} />
+                    <NavItem icon={<Users size={20} />} label="Participantes" active={activeTab === 'Participantes'} onClick={() => { setActiveTab('Participantes'); setIsMobileMenuOpen(false); }} />
+                    <NavItem icon={<TrendingUp size={20} />} label="Analíticas" active={activeTab === 'Analíticas'} onClick={() => { setActiveTab('Analíticas'); setIsMobileMenuOpen(false); }} />
                     <div className="pt-8 mb-4 border-t border-white/5">
-                        <NavItem icon={<Settings size={20} />} label="Configuración" active={activeTab === 'Configuración'} onClick={() => setActiveTab('Configuración')} />
+                        <NavItem icon={<Settings size={20} />} label="Configuración" active={activeTab === 'Configuración'} onClick={() => { setActiveTab('Configuración'); setIsMobileMenuOpen(false); }} />
                     </div>
                 </nav>
 
@@ -251,21 +269,21 @@ export default function Dashboard() {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-12 overflow-auto relative">
+            <main className="flex-1 p-6 pt-28 md:p-8 lg:p-12 overflow-y-auto overflow-x-hidden relative w-full hide-scrollbar">
                 {/* Background Accents */}
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -z-10"></div>
 
-                <header className="flex justify-between items-end mb-12">
+                <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 sm:gap-0 mb-8 lg:mb-12">
                     <div>
                         <div className="flex items-center gap-2 text-primary text-sm font-bold tracking-widest uppercase mb-1">
                             <Clock size={14} /> {new Date().toLocaleDateString()}
                         </div>
-                        <h1 className="text-4xl font-display font-black text-gradient">Panel de Control</h1>
+                        <h1 className="text-3xl sm:text-4xl font-display font-black text-gradient">Panel de Control</h1>
                     </div>
 
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="glow-button px-6 py-4 text-sm"
+                        className="glow-button px-5 py-4 w-full sm:w-auto text-sm"
                     >
                         <Plus size={18} strokeWidth={3} /> <span className="mr-2">NUEVA RIFA</span>
                     </button>
@@ -566,17 +584,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-panel p-10 w-full max-w-lg relative z-10 border-primary/20"
+                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-primary/20 max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors"
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/20 hover:text-white transition-colors"
                             >
                                 <X size={24} />
                             </button>
 
-                            <div className="mb-8">
-                                <h2 className="text-3xl font-display font-black text-gradient mb-2">Nueva Rifa</h2>
+                            <div className="mb-6 sm:mb-8 mt-2 sm:mt-0">
+                                <h2 className="text-2xl sm:text-3xl font-display font-black text-gradient mb-2">Nueva Rifa</h2>
                                 <p className="text-white/40">Configura los parámetros iniciales de tu sorteo.</p>
                             </div>
 
@@ -646,17 +664,17 @@ export default function Dashboard() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-panel p-10 w-full max-w-lg relative z-10 border-primary/20"
+                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-primary/20 max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
                             <button
                                 onClick={() => setEditModalOpen(false)}
-                                className="absolute top-6 right-6 text-white/20 hover:text-white transition-colors"
+                                className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/20 hover:text-white transition-colors"
                             >
                                 <X size={24} />
                             </button>
 
-                            <div className="mb-8">
-                                <h2 className="text-3xl font-display font-black text-gradient mb-2">Editar Rifa</h2>
+                            <div className="mb-6 sm:mb-8 mt-2 sm:mt-0">
+                                <h2 className="text-2xl sm:text-3xl font-display font-black text-gradient mb-2">Editar Rifa</h2>
                                 <p className="text-white/40">ID de Rifa: {editingRaffle.id}</p>
                             </div>
 

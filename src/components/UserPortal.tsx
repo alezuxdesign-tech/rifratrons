@@ -55,7 +55,7 @@ export default function UserPortal() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0c] pt-24 pb-12 px-4">
+        <div className="min-h-screen bg-[#0a0a0c] pt-16 md:pt-24 pb-12 px-4">
             <div className="container max-w-4xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
@@ -65,7 +65,7 @@ export default function UserPortal() {
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-wider mb-6 uppercase">
                         <Trophy size={16} fill="currentColor" /> Portal de Participantes
                     </div>
-                    <h1 className="text-5xl font-display font-black mb-4 text-gradient">Consulta tus Tickets</h1>
+                    <h1 className="text-4xl md:text-5xl font-display font-black mb-4 text-gradient">Consulta tus Tickets</h1>
                     <p className="text-white/40 max-w-lg mx-auto">Ingresa tus credenciales para ver tus números asignados y el estado del sorteo.</p>
                 </motion.div>
 
@@ -74,7 +74,7 @@ export default function UserPortal() {
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="glass-panel p-8 h-fit sticky top-24"
+                        className="glass-panel p-6 md:p-8 h-fit lg:sticky lg:top-24"
                     >
                         <form onSubmit={handleSearch} className="space-y-6">
                             <div className="space-y-2">
@@ -155,7 +155,7 @@ export default function UserPortal() {
                                                 <div className="relative z-10 flex flex-col items-center">
                                                     <Trophy className="text-emerald-500 mb-2" size={32} />
                                                     <p className="text-emerald-400 text-xs font-black uppercase tracking-widest mb-1">Número Ganador</p>
-                                                    <span className="text-6xl font-black text-white tabular-nums">
+                                                    <span className="text-5xl sm:text-6xl font-black text-white tabular-nums">
                                                         #{raffle.winning_number.toString().padStart(6, '0')}
                                                     </span>
 
@@ -191,7 +191,7 @@ export default function UserPortal() {
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-3xl font-black text-gradient tabular-nums">
+                                                    <span className="text-2xl sm:text-3xl font-black text-gradient tabular-nums">
                                                         #{p.assigned_number.toString().padStart(6, '0')}
                                                     </span>
                                                 </div>

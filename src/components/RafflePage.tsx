@@ -136,7 +136,7 @@ export default function RafflePage() {
     }
 
     return (
-        <div className="min-h-screen pt-20 pb-12 px-4 container max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+        <div className="min-h-screen pt-12 md:pt-20 pb-12 px-4 container max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Side: Branding & Info */}
             <motion.div
                 initial={{ opacity: 0, x: -30 }}
@@ -147,7 +147,7 @@ export default function RafflePage() {
                     <ExternalLink size={16} fill="currentColor" /> RIFATRONS EXCLUSIVE
                 </div>
 
-                <h1 className="text-6xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient">
+                <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient">
                     {raffle.name}
                 </h1>
 
@@ -182,7 +182,7 @@ export default function RafflePage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel p-8 md:p-12 relative overflow-hidden"
+                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
                         >
                             <div className="mb-10">
                                 <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
@@ -274,7 +274,7 @@ export default function RafflePage() {
                             key="success"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="glass-panel p-12 text-center border-emerald-500/20"
+                            className="glass-panel p-8 md:p-12 text-center border-emerald-500/20"
                         >
                             <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
                                 <CheckCircle size={48} />
@@ -284,8 +284,8 @@ export default function RafflePage() {
 
                             <div className="relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                                <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2.5rem] p-12 relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
-                                    <span className="text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
+                                <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
+                                    <span className="text-6xl sm:text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
                                         #{success.assigned_number.toString().padStart(6, '0')}
                                     </span>
                                 </div>
