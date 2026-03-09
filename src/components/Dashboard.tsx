@@ -1393,7 +1393,7 @@ export default function Dashboard() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-primary/20 max-h-[90vh] overflow-y-auto scrollbar-hide"
+                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-emerald-500 border-4 shadow-[0_0_50px_rgba(16,185,129,0.5)] max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
                             <button
                                 onClick={() => setIsModalOpen(false)}
@@ -1611,7 +1611,7 @@ export default function Dashboard() {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-primary/20 max-h-[90vh] overflow-y-auto scrollbar-hide"
+                            className="glass-panel p-6 sm:p-10 w-full max-w-lg relative z-10 border-red-500 border-4 shadow-[0_0_50px_rgba(239,68,68,0.5)] max-h-[90vh] overflow-y-auto scrollbar-hide"
                         >
                             <button
                                 onClick={() => setEditModalOpen(false)}
