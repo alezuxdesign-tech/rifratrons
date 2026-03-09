@@ -19,9 +19,12 @@ import {
     Menu,
     Package,
     DollarSign,
-    Calendar,
     Crown,
-    Star
+    Star,
+    Palette,
+    Link as LinkIcon,
+    FileText,
+    Save
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,6 +45,16 @@ export default function Dashboard() {
     const [analyticsData, setAnalyticsData] = useState<any[]>([]);
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
+    // Settings State
+    const [settings, setSettings] = useState<any>({
+        platform_name: 'Rifatrons',
+        primary_color: '#3b82f6',
+        logo_url: '',
+        manychat_webhook_url: '',
+        terms_and_conditions: ''
+    });
+    const [savingSettings, setSavingSettings] = useState(false);
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -50,7 +63,34 @@ export default function Dashboard() {
         if (activeTab === 'Analíticas' && analyticsData.length === 0) {
             fetchAnalytics();
         }
+        if (activeTab === 'Configuración') {
+            fetchSettings();
+        }
     }, [activeTab]);
+
+    async function fetchSettings() {
+        const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
+        if (data) setSettings(data);
+    }
+
+    async function handleSaveSettings(e: FormEvent) {
+        e.preventDefault();
+        setSavingSettings(true);
+        try {
+            const { data: existing } = await supabase.from('platform_settings').select('id').limit(1).single();
+            if (existing) {
+                await supabase.from('platform_settings').update(settings).eq('id', existing.id);
+            } else {
+                await supabase.from('platform_settings').insert([settings]);
+            }
+            alert('Configuración guardada correctamente.');
+        } catch (err) {
+            console.error(err);
+            alert('Error al guardar configuración');
+        } finally {
+            setSavingSettings(false);
+        }
+    }
 
     async function fetchAnalytics() {
         setLoadingAnalytics(true);
@@ -799,7 +839,7 @@ export default function Dashboard() {
                                                 acc[email].count += 1;
                                                 acc[email].spent += (Number(item.amount_paid) || 0);
                                                 return acc;
-                                            }, {})).sort((a: any, b: any) => b[1].spent - a[1].spent).slice(0, 5).map(([email, stats]: any, index) => (
+                                            }, {})).sort((a: any, b: any) => b[1].spent - a[1].spent).slice(0, 5).map(([email, stats]: any, index: number) => (
                                                 <div key={email} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-8 h-8 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center font-black text-xs border border-yellow-500/20">
@@ -826,14 +866,119 @@ export default function Dashboard() {
                 )}
 
                 {activeTab === 'Configuración' && (
-                    <div className="flex items-center justify-center py-40 animate-in zoom-in duration-500">
-                        <div className="text-center">
-                            <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6 border border-white/10">
-                                <Settings className="text-white/20" size={32} />
-                            </div>
-                            <h2 className="text-2xl font-display font-black text-gradient uppercase tracking-widest mb-2">Próximamente</h2>
-                            <p className="text-white/30">Esta sección estará disponible en la versión Pro.</p>
+                    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
+                        <div className="mb-10">
+                            <h2 className="text-3xl font-display font-black mb-2 flex items-center gap-3">
+                                <Settings className="text-primary" /> Ajustes Globales
+                            </h2>
+                            <p className="text-white/40">Personaliza la apariencia y el comportamiento de tu plataforma de rifas.</p>
                         </div>
+
+                        <form onSubmit={handleSaveSettings} className="space-y-8">
+                            {/* Branding Section */}
+                            <div className="glass-panel p-8">
+                                <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+                                    <Palette className="text-primary" size={20} /> Apariencia y Marca
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Nombre de Plataforma</label>
+                                        <input
+                                            type="text"
+                                            value={settings.platform_name || ''}
+                                            onChange={(e) => setSettings({ ...settings, platform_name: e.target.value })}
+                                            placeholder="Rifatrons"
+                                            className="premium-input w-full"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Color Principal (Hex)</label>
+                                        <div className="flex gap-3">
+                                            <input
+                                                type="color"
+                                                value={settings.primary_color || '#3b82f6'}
+                                                onChange={(e) => setSettings({ ...settings, primary_color: e.target.value })}
+                                                className="h-12 w-12 rounded-xl cursor-pointer border-0 bg-transparent p-0"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={settings.primary_color || ''}
+                                                onChange={(e) => setSettings({ ...settings, primary_color: e.target.value })}
+                                                placeholder="#3b82f6"
+                                                className="premium-input w-full font-mono uppercase"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">URL del Logo (Opcional)</label>
+                                        <input
+                                            type="url"
+                                            value={settings.logo_url || ''}
+                                            onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
+                                            placeholder="https://tudominio.com/logo.png"
+                                            className="premium-input w-full"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Integrations */}
+                            <div className="glass-panel p-8">
+                                <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+                                    <LinkIcon className="text-emerald-500" size={20} /> Integraciones Avanzadas
+                                </h3>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">ManyChat Webhook Global (Opcional)</label>
+                                        <input
+                                            type="url"
+                                            value={settings.manychat_webhook_url || ''}
+                                            onChange={(e) => setSettings({ ...settings, manychat_webhook_url: e.target.value })}
+                                            placeholder="https://api.manychat.com/..."
+                                            className="premium-input w-full"
+                                        />
+                                        <p className="text-[10px] text-white/30 italic">Utiliza esta URL si cuentas con un flujo genérico centralizado en ManyChat para todas tus rifas.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Textos y Legales */}
+                            <div className="glass-panel p-8">
+                                <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
+                                    <FileText className="text-amber-500" size={20} /> Textos y Políticas Generales
+                                </h3>
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Términos y Condiciones / Reglas de la Rifa</label>
+                                        <textarea
+                                            value={settings.terms_and_conditions || ''}
+                                            onChange={(e) => setSettings({ ...settings, terms_and_conditions: e.target.value })}
+                                            placeholder="Las reglas aplicables a los sorteos organizados en esta plataforma..."
+                                            className="premium-input w-full min-h-[150px] resize-y py-4 leading-relaxed"
+                                        ></textarea>
+                                        <p className="text-[10px] text-white/30 italic">Este texto se asocia de forma común y podrá mostrarse en las ventanas de cobro e información.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Guardar */}
+                            <div className="flex justify-end pt-4">
+                                <button
+                                    type="submit"
+                                    disabled={savingSettings}
+                                    className="glow-button px-8 py-4 flex items-center gap-2"
+                                >
+                                    {savingSettings ? (
+                                        <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            <Save size={18} /> Guardar Configuración
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 )}
             </main>

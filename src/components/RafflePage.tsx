@@ -11,6 +11,7 @@ export default function RafflePage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<any>(null);
     const [selectedBundle, setSelectedBundle] = useState<any>(null);
+    const [platformSettings, setPlatformSettings] = useState<any>(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -25,7 +26,19 @@ export default function RafflePage() {
         if (codeParam) setCode(codeParam);
 
         fetchInitialRaffle(raffleParam);
+        fetchSettings();
     }, []);
+
+    async function fetchSettings() {
+        const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
+        if (data) {
+            setPlatformSettings(data);
+            if (data.primary_color) {
+                // Inyección dinámica opcional para sobreescribir colores si en el futuro se configura CSS vars
+                document.documentElement.style.setProperty('--tw-color-primary-hex', data.primary_color);
+            }
+        }
+    }
 
     async function fetchInitialRaffle(raffleId?: string | null) {
         let query = supabase.from('raffles').select('*');
@@ -154,7 +167,7 @@ export default function RafflePage() {
                 transition={{ duration: 0.6 }}
             >
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-wider mb-8 uppercase">
-                    <ExternalLink size={16} fill="currentColor" /> RIFATRONS EXCLUSIVE
+                    <ExternalLink size={16} fill="currentColor" /> {platformSettings?.platform_name ? `${platformSettings.platform_name} EXCLUSIVE` : 'RIFATRONS EXCLUSIVE'}
                 </div>
 
                 <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient">
@@ -228,6 +241,7 @@ export default function RafflePage() {
                                     </div>
                                 )}
 
+
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
                                     <div className="relative group">
@@ -289,11 +303,27 @@ export default function RafflePage() {
 
                                 <button
                                     type="submit"
-                                    className="glow-button w-full py-5 text-lg"
                                     disabled={submitting || !raffle?.active}
+                                    className={`w-full relative group overflow-hidden rounded-2xl p-[2px] mt-2 ${(!raffle?.active) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    {submitting ? <div className="w-6 h-6 border-3 border-white/20 border-t-white rounded-full animate-spin"></div> : (raffle?.active ? 'PARTICIPAR AHORA' : 'RIFA FINALIZADA')}
+                                    {raffle?.active && <div className="absolute inset-0 bg-gradient-to-r from-primary via-indigo-500 to-primary opacity-70 group-hover:opacity-100 transition-opacity duration-500 bg-[length:200%_auto] animate-gradient"></div>}
+                                    <div className={`relative px-8 py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 ${raffle?.active ? 'bg-[#0f0f12] group-hover:bg-opacity-0' : 'bg-white/10'}`}>
+                                        {submitting ? (
+                                            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                        ) : (
+                                            <span className="font-bold text-lg tracking-wide group-hover:text-white transition-colors flex items-center gap-2">
+                                                {raffle?.active ? 'PARTICIPAR AHORA' : 'RIFA FINALIZADA'} {raffle?.active && <ExternalLink size={18} />}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
+
+                                {platformSettings?.terms_and_conditions && (
+                                    <p className="text-center text-[10px] text-white/40 mt-6 leading-relaxed max-w-sm mx-auto">
+                                        Al participar, confirmas haber leído y estar de acuerdo con nuestros{' '}
+                                        <a href="#" className="underline hover:text-white transition-colors font-bold" title={platformSettings.terms_and_conditions}>términos y condiciones</a>.
+                                    </p>
+                                )}
                             </form>
 
                             <div className="mt-8 pt-8 border-t border-white/5 text-center">
