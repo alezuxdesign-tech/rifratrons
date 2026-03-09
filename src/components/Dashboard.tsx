@@ -481,9 +481,14 @@ export default function Dashboard() {
                                                     </div>
                                                     <span className="font-bold">{raffle.name}</span>
                                                 </div>
-                                                <span className={`text-[10px] font-bold uppercase py-1 px-3 rounded-full ${raffle.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
-                                                    {raffle.active ? 'Activa' : 'Finalizada'}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[10px] font-bold uppercase py-1 px-2 rounded-md ${raffle.is_paid ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
+                                                        {raffle.is_paid ? 'Paga' : 'Gratis'}
+                                                    </span>
+                                                    <span className={`text-[10px] font-bold uppercase py-1 px-3 rounded-full ${raffle.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
+                                                        {raffle.active ? 'Activa' : 'Finalizada'}
+                                                    </span>
+                                                </div>
                                             </div>
                                             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                                                 <motion.div
@@ -526,6 +531,10 @@ export default function Dashboard() {
                                                         <span>ID: {raffle.id.substring(0, 8)}...</span>
                                                         <span>•</span>
                                                         <span>{raffle.total_numbers.toLocaleString()} Tickets</span>
+                                                        <span>•</span>
+                                                        <span className={`px-2 py-0.5 rounded-md border ${raffle.is_paid ? 'bg-amber-500/5 border-amber-500/20 text-amber-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-400'}`}>
+                                                            {raffle.is_paid ? 'Rifa Paga' : 'Rifa Gratis'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -548,22 +557,26 @@ export default function Dashboard() {
                                                     Editar
                                                 </button>
                                                 <div className="flex gap-2">
-                                                    <button
-                                                        className="py-3 px-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold hover:bg-indigo-500/20 transition-colors flex items-center justify-center gap-2"
-                                                        onClick={() => handleGenerateTestLink(raffle.id)}
-                                                    >
-                                                        <Zap size={14} /> Link de Prueba
-                                                    </button>
-                                                    <button
-                                                        className="py-3 px-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
-                                                        onClick={() => {
-                                                            const url = `https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id=${raffle.id}`;
-                                                            navigator.clipboard.writeText(url);
-                                                            alert('URL Webhook copiada para ManyChat');
-                                                        }}
-                                                    >
-                                                        <ExternalLink size={14} /> Webhook
-                                                    </button>
+                                                    {!raffle.is_paid && (
+                                                        <>
+                                                            <button
+                                                                className="py-3 px-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold hover:bg-indigo-500/20 transition-colors flex items-center justify-center gap-2"
+                                                                onClick={() => handleGenerateTestLink(raffle.id)}
+                                                            >
+                                                                <Zap size={14} /> Link de Prueba
+                                                            </button>
+                                                            <button
+                                                                className="py-3 px-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
+                                                                onClick={() => {
+                                                                    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}`;
+                                                                    navigator.clipboard.writeText(url);
+                                                                    alert('URL Webhook copiada para ManyChat');
+                                                                }}
+                                                            >
+                                                                <ExternalLink size={14} /> Webhook
+                                                            </button>
+                                                        </>
+                                                    )}
                                                     {raffle.active && (
                                                         <button
                                                             className="py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
