@@ -174,7 +174,7 @@ export default function RafflePage() {
                     body: {
                         name: formData.name,
                         email: formData.email,
-                        assigned_number: result.assigned_number,
+                        assigned_numbers: result.assigned_numbers,
                         raffle_name: raffle.name,
                         password: isNewUser ? generatedPassword : null
                     }

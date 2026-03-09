@@ -690,9 +690,13 @@ export default function Dashboard() {
                                                     <td className="py-4 pl-4 font-semibold">{p.name}</td>
                                                     <td className="py-4 text-white/40">{p.email}</td>
                                                     <td className="py-4">
-                                                        <span className="px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-xs font-bold font-mono">
-                                                            #{p.assigned_number.toString().padStart(6, '0')}
-                                                        </span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {(p.assigned_numbers || []).map((num: number) => (
+                                                                <span key={num} className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded text-[10px] font-bold font-mono">
+                                                                    #{num.toString().padStart(6, '0')}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 text-right pr-4 text-white/20 text-xs tabular-nums">
                                                         {new Date(p.created_at).toLocaleDateString()}
