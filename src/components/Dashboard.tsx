@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
+import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import {
     Users,
     Ticket,
@@ -18,7 +19,9 @@ import {
     Menu,
     Package,
     DollarSign,
-    Calendar
+    Calendar,
+    Crown,
+    Star
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -51,7 +54,7 @@ export default function Dashboard() {
 
     async function fetchAnalytics() {
         setLoadingAnalytics(true);
-        const { data } = await supabase.from('participants').select('created_at, bundle_name, amount_paid');
+        const { data } = await supabase.from('participants').select('created_at, bundle_name, amount_paid, email');
         if (data) setAnalyticsData(data);
         setLoadingAnalytics(false);
     }
@@ -650,9 +653,67 @@ export default function Dashboard() {
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="glass-panel p-6 border-yellow-500/20">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-xl bg-yellow-500/10 text-yellow-500 flex items-center justify-center border border-yellow-500/20">
+                                                <Star size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Mejor Día</p>
+                                                <h3 className="text-3xl font-display font-black">
+                                                    {(() => {
+                                                        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                                                        const daySpending = analyticsData.reduce((acc: any, item) => {
+                                                            const dayName = days[new Date(item.created_at).getDay()];
+                                                            acc[dayName] = (acc[dayName] || 0) + (Number(item.amount_paid) || 0);
+                                                            return acc;
+                                                        }, {});
+                                                        const best = Object.entries(daySpending).sort((a: any, b: any) => b[1] - a[1])[0];
+                                                        return best ? best[0] : 'N/A';
+                                                    })()}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* Gráfico de Tendencias */}
+                                <div className="glass-panel p-8">
+                                    <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
+                                        <Activity className="text-primary" /> Tendencia de Ingresos (Últimos 7 Días)
+                                    </h3>
+                                    <div className="h-[300px] w-full">
+                                        {analyticsData.length > 0 ? (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={
+                                                    Array.from({ length: 7 }, (_, i) => {
+                                                        const d = new Date();
+                                                        d.setDate(d.getDate() - i);
+                                                        return d.toISOString().split('T')[0];
+                                                    }).reverse().map(date => {
+                                                        const dayData = analyticsData.filter(item => item.created_at.startsWith(date));
+                                                        return {
+                                                            name: new Date(date).toLocaleDateString('es-ES', { weekday: 'short' }),
+                                                            Ingresos: dayData.reduce((sum, item) => sum + (Number(item.amount_paid) || 0), 0)
+                                                        };
+                                                    })
+                                                }>
+                                                    <XAxis dataKey="name" stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} />
+                                                    <YAxis stroke="#ffffff40" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                                                    <RechartsTooltip
+                                                        contentStyle={{ backgroundColor: '#0f0f12', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}
+                                                        itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
+                                                    />
+                                                    <Line type="monotone" dataKey="Ingresos" stroke="#3b82f6" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#0f0f12' }} activeDot={{ r: 8, stroke: '#3b82f6', strokeWidth: 2, fill: '#0f0f12' }} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center text-white/20 italic text-sm">No hay datos suficientes para el gráfico.</div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     {/* Top Bundles */}
                                     <div className="glass-panel p-8">
                                         <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
@@ -722,6 +783,40 @@ export default function Dashboard() {
                                                 );
                                             })}
                                             {analyticsData.length === 0 && <p className="text-white/20 italic text-sm py-4 text-center">No hay actividad registrada aún.</p>}
+                                        </div>
+                                    </div>
+
+                                    {/* Top VIP Users */}
+                                    <div className="glass-panel p-8">
+                                        <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
+                                            <Crown className="text-yellow-500" /> Top VIP Usuarios
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {Object.entries(analyticsData.reduce((acc: any, item) => {
+                                                if (!item.email) return acc;
+                                                const email = item.email;
+                                                if (!acc[email]) acc[email] = { count: 0, spent: 0 };
+                                                acc[email].count += 1;
+                                                acc[email].spent += (Number(item.amount_paid) || 0);
+                                                return acc;
+                                            }, {})).sort((a: any, b: any) => b[1].spent - a[1].spent).slice(0, 5).map(([email, stats]: any, index) => (
+                                                <div key={email} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-8 h-8 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center font-black text-xs border border-yellow-500/20">
+                                                            #{index + 1}
+                                                        </div>
+                                                        <div className="overflow-hidden">
+                                                            <div className="font-bold text-sm truncate max-w-[120px] sm:max-w-[200px]" title={email}>{email}</div>
+                                                            <div className="text-xs text-white/40">{stats.count} {stats.count === 1 ? 'ticket' : 'tickets'} comprados</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-mono text-yellow-500 font-bold">${stats.spent.toFixed(2)}</div>
+                                                        <div className="text-[10px] text-white/30 uppercase">Inversión Total</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {analyticsData.length === 0 && <p className="text-white/20 italic text-sm py-4 text-center">No hay clientes vip aún.</p>}
                                         </div>
                                     </div>
                                 </div>
