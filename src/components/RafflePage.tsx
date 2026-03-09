@@ -101,10 +101,15 @@ export default function RafflePage() {
             setRaffle(data);
 
             // Check for previous participation persistence
-            const savedParticipation = localStorage.getItem(`raffle_participation_${data.id}`);
+            const storageKey = `raffle_participation_${data.id}`;
+            const savedParticipation = localStorage.getItem(storageKey);
+            console.log('Checking storage for key:', storageKey, 'Found:', savedParticipation ? 'YES' : 'NO');
+
             if (savedParticipation) {
                 try {
-                    setSuccess(JSON.parse(savedParticipation));
+                    const parsed = JSON.parse(savedParticipation);
+                    console.log('Restoring participation data:', parsed);
+                    setSuccess(parsed);
                 } catch (e) {
                     console.error("Error parsing saved participation", e);
                 }
@@ -199,7 +204,15 @@ export default function RafflePage() {
                 setSuccess(result);
 
                 // Persist participation to prevent duplicate form view
-                localStorage.setItem(`raffle_participation_${raffle.id}`, JSON.stringify(result));
+                if (raffle?.id) {
+                    try {
+                        const storageKey = `raffle_participation_${raffle.id}`;
+                        console.log('Saving to localStorage with key:', storageKey, 'Data:', result);
+                        localStorage.setItem(storageKey, JSON.stringify(result));
+                    } catch (storageErr) {
+                        console.error("Failed to save to localStorage:", storageErr);
+                    }
+                }
 
                 // Trigger email notification
                 supabase.functions.invoke('send-confirmation', {
