@@ -91,7 +91,9 @@ export default function RafflePage() {
                 p_code: code,
                 p_name: formData.name,
                 p_email: formData.email,
-                p_tickets_count: selectedBundle ? selectedBundle.tickets : 1
+                p_tickets_count: selectedBundle ? selectedBundle.tickets : 1,
+                p_bundle_name: selectedBundle ? selectedBundle.name : 'Ticket Individual (Gratis)',
+                p_amount_paid: selectedBundle ? selectedBundle.price : 0
             });
 
             if (rpcError) throw rpcError;
@@ -211,8 +213,8 @@ export default function RafflePage() {
                                                         setError('');
                                                     }}
                                                     className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${selectedBundle?.id === bundle.id
-                                                            ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(37,99,235,0.3)]'
-                                                            : 'bg-white/5 border-white/10 hover:border-white/30'
+                                                        ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(37,99,235,0.3)]'
+                                                        : 'bg-white/5 border-white/10 hover:border-white/30'
                                                         }`}
                                                 >
                                                     <div className="font-bold text-lg mb-1">{bundle.name}</div>

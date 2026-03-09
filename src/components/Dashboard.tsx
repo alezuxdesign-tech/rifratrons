@@ -15,7 +15,10 @@ import {
     Sparkles,
     Zap,
     Trophy,
-    Menu
+    Menu,
+    Package,
+    DollarSign,
+    Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,10 +36,25 @@ export default function Dashboard() {
     const [participants, setParticipants] = useState<any[]>([]);
     const [activeTab, setActiveTab] = useState('Resumen');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [analyticsData, setAnalyticsData] = useState<any[]>([]);
+    const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if (activeTab === 'Analíticas' && analyticsData.length === 0) {
+            fetchAnalytics();
+        }
+    }, [activeTab]);
+
+    async function fetchAnalytics() {
+        setLoadingAnalytics(true);
+        const { data } = await supabase.from('participants').select('created_at, bundle_name, amount_paid');
+        if (data) setAnalyticsData(data);
+        setLoadingAnalytics(false);
+    }
 
     async function fetchData() {
         const { data: rafflesData } = await supabase
@@ -587,11 +605,136 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {(activeTab === 'Analíticas' || activeTab === 'Configuración') && (
+                {activeTab === 'Analíticas' && (
+                    <div className="space-y-8 animate-in fade-in duration-500">
+                        {loadingAnalytics ? (
+                            <div className="flex items-center justify-center py-20">
+                                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Resumen Financiero Top */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <div className="glass-panel p-6 border-emerald-500/20">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                                                <DollarSign size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Ingresos Totales Brutos</p>
+                                                <h3 className="text-3xl font-display font-black">${analyticsData.reduce((sum, item) => sum + (Number(item.amount_paid) || 0), 0).toFixed(2)}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="glass-panel p-6 border-indigo-500/20">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                                                <Ticket size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Tickets Emitidos</p>
+                                                <h3 className="text-3xl font-display font-black">{analyticsData.length}</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="glass-panel p-6 border-amber-500/20">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20">
+                                                <TrendingUp size={24} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Promedio por Ticket</p>
+                                                <h3 className="text-3xl font-display font-black">
+                                                    ${analyticsData.length > 0 ? (analyticsData.reduce((sum, item) => sum + (Number(item.amount_paid) || 0), 0) / analyticsData.length).toFixed(2) : '0.00'}
+                                                </h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Top Bundles */}
+                                    <div className="glass-panel p-8">
+                                        <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
+                                            <Package className="text-primary" /> Paquetes Más Populares
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {Object.entries(analyticsData.reduce((acc: any, item) => {
+                                                const name = item.bundle_name || 'Ticket Individual Libre';
+                                                if (!acc[name]) acc[name] = { count: 0, revenue: 0 };
+                                                acc[name].count += 1;
+                                                acc[name].revenue += (Number(item.amount_paid) || 0);
+                                                return acc;
+                                            }, {})).sort((a: any, b: any) => b[1].count - a[1].count).slice(0, 5).map(([name, stats]: any, index) => (
+                                                <div key={name} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-black text-xs">
+                                                            #{index + 1}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-sm">{name}</div>
+                                                            <div className="text-xs text-white/40">{stats.count} vendidos</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-mono text-primary font-bold">${stats.revenue.toFixed(2)}</div>
+                                                        <div className="text-[10px] text-white/30 uppercase">Ingresos</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {analyticsData.length === 0 && <p className="text-white/20 italic text-sm py-4 text-center">No hay datos de paquetes aún.</p>}
+                                        </div>
+                                    </div>
+
+                                    {/* Peak Hours */}
+                                    <div className="glass-panel p-8">
+                                        <h3 className="text-xl font-display font-black mb-6 flex items-center gap-2">
+                                            <Clock className="text-indigo-400" /> Horas Pico de Actividad
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {Object.entries(analyticsData.reduce((acc: any, item) => {
+                                                const hour = new Date(item.created_at).getHours();
+                                                acc[hour] = (acc[hour] || 0) + 1;
+                                                return acc;
+                                            }, {})).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([hour, count]: any, index) => {
+                                                const formattedHour = `${hour.toString().padStart(2, '0')}:00`;
+                                                const maxCount = Math.max(...Object.values(analyticsData.reduce((acc: any, item) => {
+                                                    const h = new Date(item.created_at).getHours();
+                                                    acc[h] = (acc[h] || 0) + 1;
+                                                    return acc;
+                                                }, {})) as number[]);
+                                                const percentage = Math.round((count / maxCount) * 100);
+
+                                                return (
+                                                    <div key={hour} className="space-y-2">
+                                                        <div className="flex justify-between text-xs font-bold text-white/60">
+                                                            <span>{formattedHour} - {parseInt(hour) + 1}:00</span>
+                                                            <span className="text-indigo-400">{count} compras</span>
+                                                        </div>
+                                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${percentage}%` }}
+                                                                className="h-full bg-indigo-500 rounded-full"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {analyticsData.length === 0 && <p className="text-white/20 italic text-sm py-4 text-center">No hay actividad registrada aún.</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'Configuración' && (
                     <div className="flex items-center justify-center py-40 animate-in zoom-in duration-500">
                         <div className="text-center">
                             <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6 border border-white/10">
-                                <Activity className="text-white/20" size={32} />
+                                <Settings className="text-white/20" size={32} />
                             </div>
                             <h2 className="text-2xl font-display font-black text-gradient uppercase tracking-widest mb-2">Próximamente</h2>
                             <p className="text-white/30">Esta sección estará disponible en la versión Pro.</p>
