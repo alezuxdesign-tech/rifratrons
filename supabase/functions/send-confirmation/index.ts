@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const RESEND_API_KEY = "re_CmjUg4EM_MMTNRqWTRRzJuso3mwSuBfmD";
+const RESEND_API_KEY = "re_ZhnNrFvX_MSkktyom1k36qn9E9rejeqD9";
 
 Deno.serve(async (req: Request) => {
   // Handle CORS
@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Rifatrons <no-reply@rifratrons.alezuxmembers.com>",
+        from: "Rifatrons <no-reply@tiketstrons.com>",
         to: [email],
         subject: `🎫 ¡Confirmación de registro: ${raffle_name}!`,
         html: `
