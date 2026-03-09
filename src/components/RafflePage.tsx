@@ -47,9 +47,9 @@ export default function RafflePage() {
         const codeParam = params.get('code');
         const raffleParam = params.get('raffle');
 
-        if (codeParam) setCode(codeParam);
+        if (codeParam) setCode(codeParam.trim().toUpperCase());
 
-        fetchInitialRaffle(raffleParam, codeParam);
+        fetchInitialRaffle(raffleParam, codeParam?.trim().toUpperCase());
         fetchSettings();
 
         // Escuchar cambios de configuración pública en tiempo real
@@ -103,10 +103,11 @@ export default function RafflePage() {
             // 1. Check if this specific code has already been used by a participant
             // This allows cross-browser persistence
             if (codeParam) {
+                const normalizedCode = codeParam.trim().toUpperCase();
                 const { data: existingParticipant } = await supabase
                     .from('participants')
                     .select('*')
-                    .eq('code', codeParam)
+                    .eq('code', normalizedCode)
                     .eq('raffle_id', data.id)
                     .maybeSingle();
 
