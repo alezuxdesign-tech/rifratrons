@@ -372,12 +372,14 @@ export default function RafflePage() {
                                                             <Ticket size={20} />
                                                         </div>
                                                         <div>
-                                                            <div className="font-black text-base tracking-tight">{bundle.name}</div>
-                                                            <div className="text-xs text-white/40">{bundle.tickets} Tickets</div>
+                                                            <div className="font-black text-lg tracking-tight mb-0.5">{bundle.name}</div>
+                                                            <div className="text-sm font-bold text-primary tracking-wide">
+                                                                {bundle.tickets} TICKETS
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="mt-auto">
-                                                        <div className="text-xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
+                                                        <div className="text-2xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
                                                     </div>
                                                 </button>
                                             ))
