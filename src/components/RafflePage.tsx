@@ -103,12 +103,10 @@ export default function RafflePage() {
             // Check for previous participation persistence
             const storageKey = `raffle_participation_${data.id}`;
             const savedParticipation = localStorage.getItem(storageKey);
-            console.log('Checking storage for key:', storageKey, 'Found:', savedParticipation ? 'YES' : 'NO');
 
             if (savedParticipation) {
                 try {
                     const parsed = JSON.parse(savedParticipation);
-                    console.log('Restoring participation data:', parsed);
                     setSuccess(parsed);
                 } catch (e) {
                     console.error("Error parsing saved participation", e);
@@ -207,7 +205,6 @@ export default function RafflePage() {
                 if (raffle?.id) {
                     try {
                         const storageKey = `raffle_participation_${raffle.id}`;
-                        console.log('Saving to localStorage with key:', storageKey, 'Data:', result);
                         localStorage.setItem(storageKey, JSON.stringify(result));
                     } catch (storageErr) {
                         console.error("Failed to save to localStorage:", storageErr);
@@ -333,7 +330,7 @@ export default function RafflePage() {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="glass-panel p-8 md:p-12 text-center border-emerald-500/20 max-w-2xl mx-auto"
+                                    className="glass-panel p-8 md:p-12 text-center border-emerald-500/20 max-w-4xl mx-auto"
                                 >
                                     <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
                                         <CheckCircle size={48} />
@@ -345,7 +342,7 @@ export default function RafflePage() {
                                         <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50"></div>
                                         <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2.5rem] p-8 sm:p-12 relative z-10">
                                             {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
-                                                <div className="flex flex-wrap items-center justify-center gap-4 max-h-[40vh] overflow-y-auto">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                                     {success.assigned_numbers.map((num: any) => (
                                                         <span key={num} className="text-3xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
                                                             #{num.toString().padStart(6, '0')}
