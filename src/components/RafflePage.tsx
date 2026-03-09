@@ -262,7 +262,7 @@ export default function RafflePage() {
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="relative w-full h-[60vh] md:h-[80vh] overflow-hidden border-b border-white/10"
+                        className="relative w-full h-[60vh] md:h-[80vh] overflow-hidden"
                     >
                         <img
                             src={raffle.image_url}
@@ -285,10 +285,11 @@ export default function RafflePage() {
                                     <h1 className="text-5xl md:text-8xl font-display font-black mb-6 leading-[1.1] text-white drop-shadow-2xl">
                                         {raffle.name}
                                     </h1>
-                                    <p className="text-lg md:text-2xl text-white/80 leading-relaxed max-w-2xl mx-auto font-medium drop-shadow-md">
-                                        Participa en la plataforma de rifas más segura y moderna.
-                                        <br className="hidden md:block" /> Validación inmediata y premios reales.
-                                    </p>
+                                    {raffle.description && (
+                                        <p className="text-lg md:text-2xl text-white/80 leading-relaxed max-w-2xl mx-auto font-medium drop-shadow-md whitespace-pre-wrap">
+                                            {raffle.description}
+                                        </p>
+                                    )}
                                 </motion.div>
                             </div>
                         </div>

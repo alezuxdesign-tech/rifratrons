@@ -22,7 +22,7 @@ import {
     Download,
     Eye,
     LayoutDashboard,
-    Image as ImageIcon,
+    ImageIcon,
     Mail,
     Phone,
     CreditCard,
@@ -54,7 +54,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number, image_url: string }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
+    const [newRaffle, setNewRaffle] = useState<{ name: string, description: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number, image_url: string }>({ name: '', description: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -333,7 +333,7 @@ export default function Dashboard() {
             showAlert('Error', 'No se pudo crear la rifa: ' + error.message, 'error');
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
+            setNewRaffle({ name: '', description: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
             fetchData();
         }
         setCreating(false);
@@ -355,6 +355,7 @@ export default function Dashboard() {
             .from('raffles')
             .update({
                 name: editingRaffle.name,
+                description: editingRaffle.description || '',
                 active: editingRaffle.active,
                 total_numbers: editingRaffle.total_numbers,
                 reserved_numbers: reservedNumbersArray,
@@ -1421,6 +1422,16 @@ export default function Dashboard() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Descripción de la Rifa</label>
+                                    <textarea
+                                        value={newRaffle.description}
+                                        onChange={(e) => setNewRaffle({ ...newRaffle, description: e.target.value })}
+                                        placeholder="Ej: Participa por un viaje increíble. Válido para todo el país."
+                                        className="premium-input w-full min-h-[100px] py-3 h-auto"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Total de Números</label>
                                     <input
                                         type="number"
@@ -1623,6 +1634,15 @@ export default function Dashboard() {
                                         onChange={(e) => setEditingRaffle({ ...editingRaffle, name: e.target.value })}
                                         className="premium-input w-full"
                                         required
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Descripción</label>
+                                    <textarea
+                                        value={editingRaffle.description || ''}
+                                        onChange={(e) => setEditingRaffle({ ...editingRaffle, description: e.target.value })}
+                                        className="premium-input w-full min-h-[100px] py-3 h-auto"
                                     />
                                 </div>
 
