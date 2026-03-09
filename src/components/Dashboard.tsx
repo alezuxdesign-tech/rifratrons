@@ -775,7 +775,7 @@ export default function Dashboard() {
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
                                         <input
                                             type="text"
-                                            placeholder="Busca por nombre, email, cédula o whatsapp..."
+                                            placeholder="Busca por nombre, email, cédula, whatsapp o ticket..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="premium-input w-full pl-12 py-3 text-sm"
@@ -827,7 +827,8 @@ export default function Dashboard() {
                                                     p.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     p.cedula?.includes(searchTerm) ||
-                                                    p.whatsapp?.includes(searchTerm);
+                                                    p.whatsapp?.includes(searchTerm) ||
+                                                    (p.assigned_numbers && p.assigned_numbers.some((num: number) => num.toString().includes(searchTerm)));
 
                                                 const bundleMatch = !filterBundle || p.bundle_name === filterBundle;
 
