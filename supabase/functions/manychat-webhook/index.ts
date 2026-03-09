@@ -65,7 +65,7 @@ Deno.serve(async (req: Request) => {
 
     // 2. Build Destination URL
     // Use the FRONTEND_URL environment variable if set, otherwise fallback to the current Hostinger URL
-    const baseUrl = Deno.env.get('FRONTEND_URL') || 'https://darkgray-louse-764129.hostingersite.com';
+    const baseUrl = Deno.env.get('FRONTEND_URL') || 'https://tiketstrons.com';
     const finalUrl = `${baseUrl}/?code=${code}&raffle=${bodyRaffleId}`;
 
     // 3. Handle Redirect Mode
