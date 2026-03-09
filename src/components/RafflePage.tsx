@@ -30,6 +30,18 @@ export default function RafflePage() {
     });
 
     useEffect(() => {
+        // Try to load cached settings first for instant branding
+        const cached = localStorage.getItem('platform_settings');
+        if (cached) {
+            try {
+                const data = JSON.parse(cached);
+                setPlatformSettings(data);
+                applyBranding(data);
+            } catch (e) {
+                console.error("Error parsing cached settings", e);
+            }
+        }
+
         const params = new URLSearchParams(window.location.search);
         const codeParam = params.get('code');
         const raffleParam = params.get('raffle');
@@ -51,20 +63,25 @@ export default function RafflePage() {
         };
     }, []);
 
+    const applyBranding = (data: any) => {
+        if (data.primary_color) {
+            document.documentElement.style.setProperty('--color-primary', data.primary_color);
+            const hex = data.primary_color.replace('#', '');
+            if (hex.length === 6) {
+                const r = parseInt(hex.substring(0, 2), 16);
+                const g = parseInt(hex.substring(2, 4), 16);
+                const b = parseInt(hex.substring(4, 6), 16);
+                document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
+            }
+        }
+    };
+
     async function fetchSettings() {
         const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
         if (data) {
             setPlatformSettings(data);
-            if (data.primary_color) {
-                document.documentElement.style.setProperty('--color-primary', data.primary_color);
-                const hex = data.primary_color.replace('#', '');
-                if (hex.length === 6) {
-                    const r = parseInt(hex.substring(0, 2), 16);
-                    const g = parseInt(hex.substring(2, 4), 16);
-                    const b = parseInt(hex.substring(4, 6), 16);
-                    document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
-                }
-            }
+            localStorage.setItem('platform_settings', JSON.stringify(data));
+            applyBranding(data);
         }
     }
 

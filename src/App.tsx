@@ -17,34 +17,48 @@ function App() {
 
     // 1.5 Fetch global appearance settings
     const loadSettings = async () => {
+      // Try to load cached settings first for instant rendering
+      const cached = localStorage.getItem('platform_settings');
+      if (cached) {
+        try {
+          const data = JSON.parse(cached);
+          applyBranding(data);
+        } catch (e) {
+          console.error("Error parsing cached settings", e);
+        }
+      }
+
       const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
       if (data) {
-        if (data.primary_color) {
-          document.documentElement.style.setProperty('--color-primary', data.primary_color);
-          const hex = data.primary_color.replace('#', '');
-          if (hex.length === 6) {
-            const r = parseInt(hex.substring(0, 2), 16);
-            const g = parseInt(hex.substring(2, 4), 16);
-            const b = parseInt(hex.substring(4, 6), 16);
-            document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
-          }
-        }
+        localStorage.setItem('platform_settings', JSON.stringify(data));
+        applyBranding(data);
+      }
+    };
 
-        // Update Document Title
-        if (data.platform_name) {
-          document.title = `${data.platform_name} | Sorteos`;
+    const applyBranding = (data: any) => {
+      if (data.primary_color) {
+        document.documentElement.style.setProperty('--color-primary', data.primary_color);
+        const hex = data.primary_color.replace('#', '');
+        if (hex.length === 6) {
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
         }
+      }
 
-        // Update Favicon dynamically
-        if (data.logo_url) {
-          let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
-          if (!link) {
-            link = document.createElement('link');
-            link.rel = 'icon';
-            document.head.appendChild(link);
-          }
-          link.href = data.logo_url;
+      if (data.platform_name) {
+        document.title = `${data.platform_name} | Sorteos`;
+      }
+
+      if (data.logo_url) {
+        let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+        if (!link) {
+          link = document.createElement('link');
+          link.rel = 'icon';
+          document.head.appendChild(link);
         }
+        link.href = data.logo_url;
       }
     };
 

@@ -64,21 +64,31 @@ export default function Dashboard() {
     const [settingsError, setSettingsError] = useState('');
 
     useEffect(() => {
+        // Try to load cached settings first for instant branding
+        const cached = localStorage.getItem('platform_settings');
+        if (cached) {
+            try {
+                setSettings(JSON.parse(cached));
+            } catch (e) {
+                console.error("Error parsing cached settings", e);
+            }
+        }
         fetchData();
+        fetchSettings(); // Still fetch to stay updated
     }, []);
 
     useEffect(() => {
         if (activeTab === 'Analíticas' && analyticsData.length === 0) {
             fetchAnalytics();
         }
-        if (activeTab === 'Configuración') {
-            fetchSettings();
-        }
     }, [activeTab]);
 
     async function fetchSettings() {
         const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
-        if (data) setSettings(data);
+        if (data) {
+            setSettings(data);
+            localStorage.setItem('platform_settings', JSON.stringify(data));
+        }
     }
 
     async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -365,26 +375,20 @@ export default function Dashboard() {
             <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-72 border-r border-white/5 bg-[#0d0d0f]/95 lg:bg-[#0d0d0f]/80 backdrop-blur-xl p-8 flex flex-col items-center transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="hidden lg:flex items-center gap-4 mb-16 w-full">
                     {settings?.logo_url ? (
-                        <>
-                            <div className="w-12 h-12 flex items-center justify-center shrink-0">
-                                <img src={settings.logo_url} alt="Logo" className="max-h-full max-w-full object-contain drop-shadow-lg" />
-                            </div>
-                            <div>
-                                <h1 className="font-display font-black tracking-tight text-xl text-gradient truncate">{settings?.platform_name || 'RIFATRONS'}</h1>
-                                <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Panel de Control</p>
-                            </div>
-                        </>
+                        <div className="w-12 h-12 flex items-center justify-center shrink-0">
+                            <img src={settings.logo_url} alt="Logo" className="max-h-full max-w-full object-contain drop-shadow-lg" />
+                        </div>
                     ) : (
-                        <>
-                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
-                                <Activity className="text-white" size={24} />
-                            </div>
-                            <div>
-                                <h1 className="font-display font-black tracking-tight text-xl text-gradient truncate">{settings?.platform_name || 'RIFATRONS'}</h1>
-                                <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Panel de Control</p>
-                            </div>
-                        </>
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                            <Activity className="text-white" size={24} />
+                        </div>
                     )}
+                    <div>
+                        <h1 className="font-display font-black tracking-tight text-xl text-gradient truncate">
+                            {settings?.platform_name || 'RIFATRONS'}
+                        </h1>
+                        <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Panel de Control</p>
+                    </div>
                 </div>
 
                 <nav className="space-y-3 w-full flex-1 pt-8 lg:pt-0">
