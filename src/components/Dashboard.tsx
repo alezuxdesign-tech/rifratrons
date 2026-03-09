@@ -25,7 +25,8 @@ import {
     Link as LinkIcon,
     FileText,
     Save,
-    Upload
+    Upload,
+    Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -45,6 +46,8 @@ export default function Dashboard() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [analyticsData, setAnalyticsData] = useState<any[]>([]);
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterBundle, setFilterBundle] = useState('');
 
     const [settings, setSettings] = useState<any>({
         platform_name: 'Rifatrons',
@@ -265,12 +268,18 @@ export default function Dashboard() {
     };
 
     const fetchParticipants = async (raffleId: string) => {
-        const { data } = await supabase
+        console.log('Fetching participants for:', raffleId);
+        const { data, error } = await supabase
             .from('participants')
             .select('*')
             .eq('raffle_id', raffleId)
             .order('created_at', { ascending: false });
-        if (data) setParticipants(data);
+
+        if (error) {
+            console.error('Error fetching participants:', error);
+        }
+        console.log('Participants received:', data?.length);
+        setParticipants(data || []);
     };
 
     const handleSelectRaffle = (raffle: any) => {
@@ -658,6 +667,28 @@ export default function Dashboard() {
                                     <h2 className="text-3xl font-display font-black text-gradient">Participantes Globales</h2>
                                     <p className="text-white/40">Todas las personas que han participado en tus sorteos.</p>
                                 </div>
+                                <div className="flex flex-col sm:flex-row gap-4 items-end">
+                                    <div className="relative group w-full sm:w-64">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="Busca por nombre, email, cédula o whatsapp..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="premium-input w-full pl-12 py-3 text-sm"
+                                        />
+                                    </div>
+                                    <select
+                                        value={filterBundle}
+                                        onChange={(e) => setFilterBundle(e.target.value)}
+                                        className="premium-input py-3 text-sm bg-black/40 border-white/10"
+                                    >
+                                        <option value="">Todos los Paquetes</option>
+                                        {Array.from(new Set(participants.map(p => p.bundle_name).filter(Boolean))).map(bundle => (
+                                            <option key={bundle} value={bundle}>{bundle}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
@@ -678,25 +709,50 @@ export default function Dashboard() {
                                     <table className="w-full text-left">
                                         <thead>
                                             <tr className="text-[10px] font-bold uppercase tracking-widest text-white/20 border-b border-white/5">
-                                                <th className="pb-4 pl-4">Nombre</th>
-                                                <th className="pb-4">Email</th>
-                                                <th className="pb-4">Ticket</th>
-                                                <th className="pb-4 text-right pr-4">Fecha</th>
+                                                <th className="pb-4 pl-4">Nombre Completo</th>
+                                                <th className="pb-4">Contacto (Email/WP)</th>
+                                                <th className="pb-4">Identificación (Cédula)</th>
+                                                <th className="pb-4">Tickets Asignados</th>
+                                                <th className="pb-4">Paquete</th>
+                                                <th className="pb-4 text-right pr-4">Registro</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
-                                            {participants.map((p) => (
+                                            {participants.filter(p => {
+                                                const searchMatch = !searchTerm ||
+                                                    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    p.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                    p.cedula?.includes(searchTerm) ||
+                                                    p.whatsapp?.includes(searchTerm);
+
+                                                const bundleMatch = !filterBundle || p.bundle_name === filterBundle;
+
+                                                return searchMatch && bundleMatch;
+                                            }).map((p) => (
                                                 <tr key={p.id} className="group hover:bg-white/[0.02] transition-colors">
-                                                    <td className="py-4 pl-4 font-semibold">{p.name}</td>
-                                                    <td className="py-4 text-white/40">{p.email}</td>
+                                                    <td className="py-4 pl-4">
+                                                        <div className="font-semibold">{p.name} {p.last_name}</div>
+                                                        <div className="text-[10px] text-white/20 uppercase tracking-tighter">ID: {p.id.slice(0, 8)}</div>
+                                                    </td>
                                                     <td className="py-4">
-                                                        <div className="flex flex-wrap gap-1">
+                                                        <div className="text-sm text-white/60">{p.email}</div>
+                                                        <div className="text-[10px] text-primary/60 font-mono">{p.whatsapp || 'N/A'}</div>
+                                                    </td>
+                                                    <td className="py-4">
+                                                        <span className="text-xs font-mono text-white/40">{p.cedula || 'N/A'}</span>
+                                                    </td>
+                                                    <td className="py-4">
+                                                        <div className="flex flex-wrap gap-1 max-w-[200px]">
                                                             {(p.assigned_numbers || []).map((num: number) => (
                                                                 <span key={num} className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded text-[10px] font-bold font-mono">
                                                                     #{num.toString().padStart(6, '0')}
                                                                 </span>
                                                             ))}
                                                         </div>
+                                                    </td>
+                                                    <td className="py-4">
+                                                        <span className="text-xs text-white/40">{p.bundle_name || 'Ticket Individual'}</span>
                                                     </td>
                                                     <td className="py-4 text-right pr-4 text-white/20 text-xs tabular-nums">
                                                         {new Date(p.created_at).toLocaleDateString()}
