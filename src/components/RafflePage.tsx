@@ -13,6 +13,14 @@ export default function RafflePage() {
     const [selectedBundle, setSelectedBundle] = useState<any>(null);
     const [platformSettings, setPlatformSettings] = useState<any>(null);
 
+    const formatCOP = (amount: number) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
+
     const [formData, setFormData] = useState({
         name: '',
         email: ''
@@ -273,7 +281,7 @@ export default function RafflePage() {
                                                     <div className="font-bold text-lg mb-1">{bundle.name}</div>
                                                     <div className="flex justify-between items-end">
                                                         <span className="text-sm text-white/60">{bundle.tickets} Tickets</span>
-                                                        <span className="font-mono text-primary font-bold">${bundle.price}</span>
+                                                        <span className="font-mono text-primary font-bold">{formatCOP(bundle.price)}</span>
                                                     </div>
                                                 </button>
                                             ))}
@@ -287,7 +295,7 @@ export default function RafflePage() {
                                             <span className="font-bold text-sm tracking-widest uppercase">Ticket Individual</span>
                                             <span className="text-[10px] opacity-70">Costo de participación por Boleto</span>
                                         </div>
-                                        <span className="text-xl font-mono font-bold">${raffle.ticket_price || '0.00'}</span>
+                                        <span className="text-xl font-mono font-bold">{formatCOP(raffle.ticket_price || 0)}</span>
                                     </div>
                                 )}
 
@@ -362,7 +370,7 @@ export default function RafflePage() {
                                         ) : (
                                             <span className="font-bold text-lg tracking-wide group-hover:text-white transition-colors flex items-center gap-2">
                                                 {raffle?.active
-                                                    ? (raffle.is_paid ? `PAGAR Y PARTICIPAR ($${(selectedBundle?.price || raffle.ticket_price || 0).toFixed(2)})` : 'PARTICIPAR AHORA')
+                                                    ? (raffle.is_paid ? `PAGAR Y PARTICIPAR (${formatCOP(selectedBundle?.price || raffle.ticket_price || 0)})` : 'PARTICIPAR AHORA')
                                                     : 'RIFA FINALIZADA'} {raffle?.active && <ExternalLink size={18} />}
                                             </span>
                                         )}

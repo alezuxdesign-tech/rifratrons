@@ -1250,15 +1250,21 @@ export default function Dashboard() {
 
                                     {newRaffle.is_paid && (
                                         <div className="space-y-2 animate-in fade-in zoom-in duration-300">
-                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio por Ticket ($)</label>
+                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
                                             <input
                                                 type="number"
-                                                step="0.01"
-                                                min="0.01"
+                                                min="0"
                                                 value={newRaffle.ticket_price || ''}
-                                                onChange={(e) => setNewRaffle({ ...newRaffle, ticket_price: parseFloat(e.target.value) })}
-                                                placeholder="Ej: 5.00"
-                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60"
+                                                onChange={(e) => {
+                                                    const price = parseInt(e.target.value) || 0;
+                                                    const updatedBundles = (newRaffle.ticket_bundles || []).map((b: any) => ({
+                                                        ...b,
+                                                        price: b.tickets * price
+                                                    }));
+                                                    setNewRaffle({ ...newRaffle, ticket_price: price, ticket_bundles: updatedBundles });
+                                                }}
+                                                placeholder="Ej: 10000"
+                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
                                                 required={newRaffle.is_paid}
                                             />
                                         </div>
@@ -1278,23 +1284,27 @@ export default function Dashboard() {
                                     </div>
                                     {(newRaffle.ticket_bundles || []).map((bundle: any, index: number) => (
                                         <div key={bundle.id} className="flex gap-2 items-center bg-white/5 p-3 rounded-xl border border-white/10">
-                                            <input type="text" placeholder="Nombre (ej: Combo x5)" value={bundle.name} onChange={(e) => {
+                                            <input type="text" placeholder="Nombre (ej: Combo)" value={bundle.name} onChange={(e) => {
                                                 const newB = [...newRaffle.ticket_bundles];
                                                 newB[index].name = e.target.value;
                                                 setNewRaffle({ ...newRaffle, ticket_bundles: newB });
-                                            }} className="premium-input w-[40%] text-sm py-2" required />
+                                            }} className="premium-input w-[35%] text-sm py-2" required />
                                             <input type="number" placeholder="Tickets" min="1" value={bundle.tickets || ''} onChange={(e) => {
                                                 const newB = [...newRaffle.ticket_bundles];
-                                                newB[index].tickets = parseInt(e.target.value) || 0;
+                                                const tickets = parseInt(e.target.value) || 0;
+                                                newB[index].tickets = tickets;
+                                                if (newRaffle.is_paid && newRaffle.ticket_price) {
+                                                    newB[index].price = tickets * newRaffle.ticket_price;
+                                                }
                                                 setNewRaffle({ ...newRaffle, ticket_bundles: newB });
-                                            }} className="premium-input w-[25%] text-sm py-2" required />
-                                            <div className="relative w-[25%]">
-                                                <span className="absolute left-3 top-2 text-white/40 font-mono">$</span>
-                                                <input type="number" placeholder="Precio" min="0" step="0.01" value={bundle.price} onChange={(e) => {
+                                            }} className="premium-input w-[20%] text-sm py-2" required />
+                                            <div className="relative w-[35%]">
+                                                <span className="absolute left-3 top-2 text-white/40 font-mono text-xs mt-0.5">COP$</span>
+                                                <input type="number" placeholder="Total" min="0" value={bundle.price} onChange={(e) => {
                                                     const newB = [...newRaffle.ticket_bundles];
-                                                    newB[index].price = parseFloat(e.target.value) || 0;
+                                                    newB[index].price = parseInt(e.target.value) || 0;
                                                     setNewRaffle({ ...newRaffle, ticket_bundles: newB });
-                                                }} className="premium-input w-full pl-6 text-sm py-2 font-mono" required />
+                                                }} className="premium-input w-full pl-12 text-sm py-2 font-mono" required />
                                             </div>
                                             <button type="button" onClick={() => {
                                                 const newB = newRaffle.ticket_bundles.filter((_, i) => i !== index);
@@ -1406,15 +1416,21 @@ export default function Dashboard() {
 
                                     {editingRaffle.is_paid && (
                                         <div className="space-y-2 animate-in fade-in zoom-in duration-300">
-                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio por Ticket ($)</label>
+                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
                                             <input
                                                 type="number"
-                                                step="0.01"
-                                                min="0.01"
+                                                min="0"
                                                 value={editingRaffle.ticket_price || ''}
-                                                onChange={(e) => setEditingRaffle({ ...editingRaffle, ticket_price: parseFloat(e.target.value) })}
-                                                placeholder="Ej: 5.00"
-                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60"
+                                                onChange={(e) => {
+                                                    const price = parseInt(e.target.value) || 0;
+                                                    const updatedBundles = (editingRaffle.ticket_bundles || []).map((b: any) => ({
+                                                        ...b,
+                                                        price: b.tickets * price
+                                                    }));
+                                                    setEditingRaffle({ ...editingRaffle, ticket_price: price, ticket_bundles: updatedBundles });
+                                                }}
+                                                placeholder="Ej: 10000"
+                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
                                                 required={editingRaffle.is_paid}
                                             />
                                         </div>
@@ -1438,19 +1454,23 @@ export default function Dashboard() {
                                                 const newB = [...editingRaffle.ticket_bundles];
                                                 newB[index].name = e.target.value;
                                                 setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
-                                            }} className="premium-input w-[40%] text-sm py-2" required />
+                                            }} className="premium-input w-[35%] text-sm py-2" required />
                                             <input type="number" placeholder="Tickets" min="1" value={bundle.tickets || ''} onChange={(e) => {
                                                 const newB = [...editingRaffle.ticket_bundles];
-                                                newB[index].tickets = parseInt(e.target.value) || 0;
+                                                const tickets = parseInt(e.target.value) || 0;
+                                                newB[index].tickets = tickets;
+                                                if (editingRaffle.is_paid && editingRaffle.ticket_price) {
+                                                    newB[index].price = tickets * editingRaffle.ticket_price;
+                                                }
                                                 setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
-                                            }} className="premium-input w-[25%] text-sm py-2" required />
-                                            <div className="relative w-[25%]">
-                                                <span className="absolute left-3 top-2 text-white/40 font-mono">$</span>
-                                                <input type="number" placeholder="Precio" min="0" step="0.01" value={bundle.price} onChange={(e) => {
+                                            }} className="premium-input w-[20%] text-sm py-2" required />
+                                            <div className="relative w-[35%]">
+                                                <span className="absolute left-3 top-2 text-white/40 font-mono text-xs mt-0.5">COP$</span>
+                                                <input type="number" placeholder="Total" min="0" value={bundle.price} onChange={(e) => {
                                                     const newB = [...editingRaffle.ticket_bundles];
-                                                    newB[index].price = parseFloat(e.target.value) || 0;
+                                                    newB[index].price = parseInt(e.target.value) || 0;
                                                     setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
-                                                }} className="premium-input w-full pl-6 text-sm py-2 font-mono" required />
+                                                }} className="premium-input w-full pl-12 text-sm py-2 font-mono" required />
                                             </div>
                                             <button type="button" onClick={() => {
                                                 const newB = editingRaffle.ticket_bundles.filter((_: any, i: number) => i !== index);
