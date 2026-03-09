@@ -1,0 +1,36 @@
+name: Deploy to Hostinger VPS
+
+on:
+  push:
+    branches:
+      - main  # O la rama que uses como principal
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-node: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Deploy to VPS via RSYNC
+        uses: Burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete
+          path: ./dist/
+          remote_path: /var/www/html  # Ajusta esto a la ruta de tu servidor (ej: /var/www/tu-app/dist)
+          remote_host: ${{ secrets.SERVER_IP }}
+          remote_user: ${{ secrets.SERVER_USER }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
