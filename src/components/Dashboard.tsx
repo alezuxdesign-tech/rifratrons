@@ -45,7 +45,6 @@ export default function Dashboard() {
     const [analyticsData, setAnalyticsData] = useState<any[]>([]);
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
-    // Settings State
     const [settings, setSettings] = useState<any>({
         platform_name: 'Rifatrons',
         primary_color: '#3b82f6',
@@ -54,6 +53,7 @@ export default function Dashboard() {
         terms_and_conditions: ''
     });
     const [savingSettings, setSavingSettings] = useState(false);
+    const [settingsSuccess, setSettingsSuccess] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -83,10 +83,22 @@ export default function Dashboard() {
             } else {
                 await supabase.from('platform_settings').insert([settings]);
             }
-            alert('Configuración guardada correctamente.');
+
+            if (settings.primary_color) {
+                document.documentElement.style.setProperty('--color-primary', settings.primary_color);
+                const hex = settings.primary_color.replace('#', '');
+                if (hex.length === 6) {
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
+                }
+            }
+
+            setSettingsSuccess(true);
+            setTimeout(() => setSettingsSuccess(false), 3000);
         } catch (err) {
             console.error(err);
-            alert('Error al guardar configuración');
         } finally {
             setSavingSettings(false);
         }
@@ -979,6 +991,26 @@ export default function Dashboard() {
                                 </button>
                             </div>
                         </form>
+
+                        {/* Modal de éxito de Settings */}
+                        <AnimatePresence>
+                            {settingsSuccess && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 50 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 50 }}
+                                    className="fixed bottom-6 right-6 glass-panel py-4 px-6 border-emerald-500/30 flex items-center gap-4 z-50 pointer-events-none"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                                        ✓
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold">¡Guardado Exitoso!</h4>
+                                        <p className="text-white/40 text-sm">Tus ajustes se han aplicado a la plataforma.</p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
             </main>

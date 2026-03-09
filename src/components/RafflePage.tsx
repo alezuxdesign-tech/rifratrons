@@ -34,8 +34,14 @@ export default function RafflePage() {
         if (data) {
             setPlatformSettings(data);
             if (data.primary_color) {
-                // Inyección dinámica opcional para sobreescribir colores si en el futuro se configura CSS vars
-                document.documentElement.style.setProperty('--tw-color-primary-hex', data.primary_color);
+                document.documentElement.style.setProperty('--color-primary', data.primary_color);
+                const hex = data.primary_color.replace('#', '');
+                if (hex.length === 6) {
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+                    document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
+                }
             }
         }
     }
