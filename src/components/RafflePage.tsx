@@ -49,7 +49,7 @@ export default function RafflePage() {
 
         if (codeParam) setCode(codeParam);
 
-        fetchInitialRaffle(raffleParam);
+        fetchInitialRaffle(raffleParam, codeParam);
         fetchSettings();
 
         // Escuchar cambios de configuración pública en tiempo real
@@ -86,7 +86,7 @@ export default function RafflePage() {
         }
     }
 
-    async function fetchInitialRaffle(raffleId?: string | null) {
+    async function fetchInitialRaffle(raffleId?: string | null, codeParam?: string | null) {
         let query = supabase.from('raffles').select('*');
 
         if (raffleId) {
@@ -100,7 +100,31 @@ export default function RafflePage() {
         if (data) {
             setRaffle(data);
 
-            // Check for previous participation persistence
+            // 1. Check if this specific code has already been used by a participant
+            // This allows cross-browser persistence
+            if (codeParam) {
+                const { data: existingParticipant } = await supabase
+                    .from('participants')
+                    .select('*')
+                    .eq('code', codeParam)
+                    .eq('raffle_id', data.id)
+                    .maybeSingle();
+
+                if (existingParticipant) {
+                    setSuccess({
+                        success: true,
+                        participant_id: existingParticipant.id,
+                        assigned_numbers: existingParticipant.assigned_numbers,
+                        raffle_id: existingParticipant.raffle_id,
+                        name: existingParticipant.name,
+                        email: existingParticipant.email
+                    });
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            // 2. Check for previous participation persistence in localStorage (legacy/local)
             const storageKey = `raffle_participation_${data.id}`;
             const savedParticipation = localStorage.getItem(storageKey);
 

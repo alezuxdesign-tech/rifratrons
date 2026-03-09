@@ -44,13 +44,6 @@ Deno.serve(async (req: Request) => {
               <p style="margin: 12px 0 0 0; font-size: 11px; color: #64748b; line-height: 1.4;">Te recomendamos guardar estos datos. Úsalos para entrar al portal "Mis Tickets" y ver todos tus números en tiempo real.</p>
             </div>
             `;
-    } else {
-      credentialsBlock = `
-            <div style="background: #111827; padding: 20px; border-radius: 20px; margin: 25px 0; border: 1px solid #1f2937;">
-              <p style="margin: 0; color: #94a3b8; font-weight: bold; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Información de Acceso</p>
-              <p style="margin: 0; font-size: 14px; color: #94a3b8;">Usa tu correo (${email}) y la contraseña que recibiste anteriormente para revisar tus tickets en el portal.</p>
-            </div>
-            `;
     }
 
     const res = await fetch("https://api.resend.com/emails", {
