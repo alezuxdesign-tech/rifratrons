@@ -1276,10 +1276,14 @@ export default function Dashboard() {
                                         <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Paquetes de Tickets (Opcional)</label>
                                         <button
                                             type="button"
-                                            onClick={() => setNewRaffle({ ...newRaffle, ticket_bundles: [...(newRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] })}
-                                            className="text-xs text-primary font-bold px-3 py-1 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                                            onClick={() => {
+                                                if (!newRaffle.is_paid && (newRaffle.ticket_bundles?.length || 0) >= 1) return;
+                                                setNewRaffle({ ...newRaffle, ticket_bundles: [...(newRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] });
+                                            }}
+                                            disabled={!newRaffle.is_paid && (newRaffle.ticket_bundles?.length || 0) >= 1}
+                                            className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${!newRaffle.is_paid && (newRaffle.ticket_bundles?.length || 0) >= 1 ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20'}`}
                                         >
-                                            + Añadir Paquete
+                                            {(!newRaffle.is_paid && (newRaffle.ticket_bundles?.length || 0) >= 1) ? 'Límite de 1 paquete (Gratis)' : '+ Añadir Paquete'}
                                         </button>
                                     </div>
                                     {(newRaffle.ticket_bundles || []).map((bundle: any, index: number) => (
@@ -1442,10 +1446,14 @@ export default function Dashboard() {
                                         <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Paquetes de Tickets</label>
                                         <button
                                             type="button"
-                                            onClick={() => setEditingRaffle({ ...editingRaffle, ticket_bundles: [...(editingRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] })}
-                                            className="text-xs text-primary font-bold px-3 py-1 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                                            onClick={() => {
+                                                if (!editingRaffle.is_paid && (editingRaffle.ticket_bundles?.length || 0) >= 1) return;
+                                                setEditingRaffle({ ...editingRaffle, ticket_bundles: [...(editingRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] });
+                                            }}
+                                            disabled={!editingRaffle.is_paid && (editingRaffle.ticket_bundles?.length || 0) >= 1}
+                                            className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${!editingRaffle.is_paid && (editingRaffle.ticket_bundles?.length || 0) >= 1 ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'text-primary bg-primary/10 hover:bg-primary/20'}`}
                                         >
-                                            + Añadir Paquete
+                                            {(!editingRaffle.is_paid && (editingRaffle.ticket_bundles?.length || 0) >= 1) ? 'Límite de 1 paquete (Gratis)' : '+ Añadir Paquete'}
                                         </button>
                                     </div>
                                     {(editingRaffle.ticket_bundles || []).map((bundle: any, index: number) => (

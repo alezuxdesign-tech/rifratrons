@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
-import { Ticket, User, Mail, Send, AlertCircle, CheckCircle, ExternalLink, Search } from 'lucide-react';
+import { Ticket, User, Mail, Send, AlertCircle, CheckCircle, ExternalLink, Search, Phone, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RafflePage() {
@@ -23,7 +23,10 @@ export default function RafflePage() {
 
     const [formData, setFormData] = useState({
         name: '',
-        email: ''
+        last_name: '',
+        email: '',
+        whatsapp: '',
+        cedula: ''
     });
 
     useEffect(() => {
@@ -78,6 +81,10 @@ export default function RafflePage() {
 
         if (data) {
             setRaffle(data);
+            // Auto-select if it's a free raffle and has exactly one bundle
+            if (!data.is_paid && data.ticket_bundles?.length === 1) {
+                setSelectedBundle(data.ticket_bundles[0]);
+            }
         } else if (error && raffleId) {
             // If raffleId was provided but not found, try to fallback to any active raffle
             const { data: fallbackData } = await supabase
@@ -108,8 +115,10 @@ export default function RafflePage() {
                 // Generar Preferencia de MercadoPago
                 const payload = {
                     raffle_id: raffle.id,
-                    name: formData.name,
+                    name: `${formData.name} ${formData.last_name}`,
                     email: formData.email,
+                    whatsapp: formData.whatsapp,
+                    cedula: formData.cedula,
                     bundle: selectedBundle || { name: 'Ticket Individual', tickets: 1, price: raffle.ticket_price }
                 };
 
@@ -143,7 +152,10 @@ export default function RafflePage() {
                 p_raffle_id: raffle.id,
                 p_code: code,
                 p_name: formData.name,
+                p_last_name: formData.last_name,
                 p_email: formData.email,
+                p_whatsapp: formData.whatsapp,
+                p_cedula: formData.cedula,
                 p_tickets_count: selectedBundle ? selectedBundle.tickets : 1,
                 p_bundle_name: selectedBundle ? selectedBundle.name : 'Ticket Individual (Gratis)',
                 p_amount_paid: selectedBundle ? selectedBundle.price : 0
@@ -317,19 +329,37 @@ export default function RafflePage() {
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Nombre Completo</label>
-                                    <div className="relative group">
-                                        <User className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                        <input
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            placeholder="Alejandro Suárez"
-                                            className="premium-input pl-14 w-full"
-                                            required
-                                            disabled={submitting}
-                                        />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Nombre(s)</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                placeholder="Ej: Alejandro"
+                                                className="premium-input pl-14 w-full"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Apellido(s)</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                            <input
+                                                type="text"
+                                                value={formData.last_name}
+                                                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                placeholder="Ej: Suárez"
+                                                className="premium-input pl-14 w-full"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -346,6 +376,40 @@ export default function RafflePage() {
                                             required
                                             disabled={submitting}
                                         />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                            <input
+                                                type="tel"
+                                                value={formData.whatsapp}
+                                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                                placeholder="+57 300..."
+                                                className="premium-input pl-14 w-full"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
+                                        <div className="relative group">
+                                            <CreditCard className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                            <input
+                                                type="text"
+                                                value={formData.cedula}
+                                                onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                                                placeholder="Documento Identidad"
+                                                className="premium-input pl-14 w-full"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
