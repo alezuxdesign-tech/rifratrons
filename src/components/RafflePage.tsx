@@ -257,41 +257,47 @@ export default function RafflePage() {
             </header>
 
             <main className="flex-grow pt-20">
-                {/* Raffle Portada - Full Width */}
+                {/* Raffle Hero - Full Width with Info Overlay */}
                 {raffle.image_url && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden border-b border-white/10"
+                        className="relative w-full h-[60vh] md:h-[80vh] overflow-hidden border-b border-white/10"
                     >
                         <img
                             src={raffle.image_url}
                             alt="Portada"
                             className="w-full h-full object-cover"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent"></div>
-                        <div className="absolute bottom-8 left-0 right-0">
-                            <div className="container max-w-6xl mx-auto px-4">
-                                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">En curso</span>
+                        {/* Shorter, darker gradient for better text contrast */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-[#0a0a0c]/40 to-transparent"></div>
+
+                        <div className="absolute inset-0 flex flex-col justify-end pb-12">
+                            <div className="container max-w-6xl mx-auto px-4 text-center">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg mb-6 inline-block">
+                                        En curso
+                                    </span>
+                                    <h1 className="text-5xl md:text-8xl font-display font-black mb-6 leading-[1.1] text-white drop-shadow-2xl">
+                                        {raffle.name}
+                                    </h1>
+                                    <p className="text-lg md:text-2xl text-white/80 leading-relaxed max-w-2xl mx-auto font-medium drop-shadow-md">
+                                        Participa en la plataforma de rifas más segura y moderna.
+                                        <br className="hidden md:block" /> Validación inmediata y premios reales.
+                                    </p>
+                                </motion.div>
                             </div>
                         </div>
                     </motion.div>
                 )}
 
                 <div className="container max-w-4xl mx-auto px-4 py-16">
-                    {/* Raffle Info */}
-                    <div className="text-center mb-16">
-                        <h1 className="text-5xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient mx-auto max-w-3xl">
-                            {raffle.name}
-                        </h1>
-                        <p className="text-xl text-white/50 leading-relaxed max-w-xl mx-auto">
-                            Participa en la plataforma de rifas más segura y moderna.
-                            Validación inmediata y premios reales.
-                        </p>
-                    </div>
-
                     {/* Participation Section */}
-                    <div className="max-w-2xl mx-auto">
+                    <div className="max-w-4xl mx-auto">
                         <AnimatePresence mode="wait">
                             {success ? (
                                 <motion.div
@@ -299,7 +305,7 @@ export default function RafflePage() {
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="glass-panel p-8 md:p-12 text-center border-emerald-500/20"
+                                    className="glass-panel p-8 md:p-12 text-center border-emerald-500/20 max-w-2xl mx-auto"
                                 >
                                     <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
                                         <CheckCircle size={48} />
@@ -346,7 +352,7 @@ export default function RafflePage() {
                                         <p className="text-white/40 text-sm">Selecciona cuántos tickets deseas para participar.</p>
                                     </div>
 
-                                    <div className="space-y-4 mb-10">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
                                         {raffle.ticket_bundles && raffle.ticket_bundles.length > 0 ? (
                                             raffle.ticket_bundles.map((bundle: any) => (
                                                 <button
@@ -356,48 +362,50 @@ export default function RafflePage() {
                                                         setSelectedBundle(bundle);
                                                         setError('');
                                                     }}
-                                                    className={`w-full p-6 rounded-2xl border text-left flex items-center justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
+                                                    className={`w-full p-6 rounded-2xl border text-left flex flex-col justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
                                                         ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]'
                                                         : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.08]'
                                                         }`}
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedBundle?.id === bundle.id ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
-                                                            <Ticket size={24} />
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${selectedBundle?.id === bundle.id ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
+                                                            <Ticket size={20} />
                                                         </div>
                                                         <div>
-                                                            <div className="font-black text-lg tracking-tight">{bundle.name}</div>
-                                                            <div className="text-sm text-white/40">{bundle.tickets} Tickets</div>
+                                                            <div className="font-black text-base tracking-tight">{bundle.name}</div>
+                                                            <div className="text-xs text-white/40">{bundle.tickets} Tickets</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <div className="text-2xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
+                                                    <div className="mt-auto">
+                                                        <div className="text-xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
                                                     </div>
                                                 </button>
                                             ))
                                         ) : (
-                                            <div className="p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
+                                            <div className="col-span-full p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
                                                 <p className="text-white/40">No hay paquetes configurados.</p>
                                             </div>
                                         )}
                                     </div>
 
-                                    <button
-                                        onClick={() => {
-                                            if (!selectedBundle && raffle.is_paid) {
-                                                setError('Selecciona un paquete para participar.');
-                                                return;
-                                            }
-                                            setShowRegistrationForm(true);
-                                        }}
-                                        className="glow-button w-full py-5 flex items-center justify-center gap-3 text-lg font-black"
-                                    >
-                                        Participar Ahora <Send size={20} />
-                                    </button>
+                                    <div className="max-w-md mx-auto">
+                                        <button
+                                            onClick={() => {
+                                                if (!selectedBundle && raffle.is_paid) {
+                                                    setError('Selecciona un paquete para participar.');
+                                                    return;
+                                                }
+                                                setShowRegistrationForm(true);
+                                            }}
+                                            className="glow-button w-full py-5 flex items-center justify-center gap-3 text-lg font-black"
+                                        >
+                                            Participar Ahora <Send size={20} />
+                                        </button>
 
-                                    {error && (
-                                        <p className="mt-4 text-center text-red-400 text-sm font-bold">{error}</p>
-                                    )}
+                                        {error && (
+                                            <p className="mt-4 text-center text-red-400 text-sm font-bold">{error}</p>
+                                        )}
+                                    </div>
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -405,7 +413,7 @@ export default function RafflePage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                                    className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden max-w-2xl mx-auto"
                                 >
                                     <div className="mb-8 relative">
                                         {raffle.is_paid && (
