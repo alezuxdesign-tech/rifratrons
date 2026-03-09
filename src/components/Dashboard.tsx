@@ -1230,21 +1230,23 @@ export default function Dashboard() {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative inline-flex items-center cursor-pointer">
+                                    <label className="flex items-center gap-3 cursor-pointer group">
+                                        <div className="relative inline-flex items-center">
                                             <input
                                                 type="checkbox"
                                                 className="sr-only peer"
-                                                checked={newRaffle.is_paid}
-                                                onChange={(e) => setNewRaffle({ ...newRaffle, is_paid: e.target.checked })}
+                                                checked={newRaffle.is_paid || false}
+                                                onChange={(e) => {
+                                                    setNewRaffle({ ...newRaffle, is_paid: e.target.checked });
+                                                }}
                                             />
-                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-white">Rifa de Pago</p>
-                                            <p className="text-[10px] text-white/40">Actívalo para cobrar por ticket</p>
+                                            <p className="font-bold text-sm text-white select-none">Rifa de Pago</p>
+                                            <p className="text-[10px] text-white/40 select-none">Actívalo para cobrar por ticket</p>
                                         </div>
-                                    </div>
+                                    </label>
 
                                     {newRaffle.is_paid && (
                                         <div className="space-y-2 animate-in fade-in zoom-in duration-300">
@@ -1386,21 +1388,21 @@ export default function Dashboard() {
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative inline-flex items-center cursor-pointer">
+                                    <label className="flex items-center gap-3 cursor-pointer group">
+                                        <div className="relative inline-flex items-center">
                                             <input
                                                 type="checkbox"
                                                 className="sr-only peer"
                                                 checked={editingRaffle.is_paid || false}
                                                 onChange={(e) => setEditingRaffle({ ...editingRaffle, is_paid: e.target.checked })}
                                             />
-                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm text-white">Rifa de Pago</p>
-                                            <p className="text-[10px] text-white/40">Actívalo para cobrar por ticket</p>
+                                            <p className="font-bold text-sm text-white select-none">Rifa de Pago</p>
+                                            <p className="text-[10px] text-white/40 select-none">Actívalo para cobrar por ticket</p>
                                         </div>
-                                    </div>
+                                    </label>
 
                                     {editingRaffle.is_paid && (
                                         <div className="space-y-2 animate-in fade-in zoom-in duration-300">
