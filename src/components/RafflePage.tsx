@@ -344,7 +344,7 @@ export default function RafflePage() {
                                             {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
                                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
                                                     {success.assigned_numbers.map((num: any) => (
-                                                        <span key={num} className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-black text-gradient tracking-tighter tabular-nums px-2 py-2 sm:px-5 sm:py-3 border border-primary/20 rounded-xl sm:rounded-2xl bg-black/40 shadow-lg flex items-center justify-center text-center">
+                                                        <span key={num} className="text-base xs:text-lg sm:text-xl md:text-2xl font-black text-gradient tracking-tighter tabular-nums px-2 py-2 sm:px-4 sm:py-3 border border-primary/20 rounded-xl sm:rounded-2xl bg-black/40 shadow-lg flex items-center justify-center text-center">
                                                             #{num.toString().padStart(6, '0')}
                                                         </span>
                                                     ))}
