@@ -176,6 +176,14 @@ export default function RafflePage() {
                     <ExternalLink size={16} fill="currentColor" /> {platformSettings?.platform_name ? `${platformSettings.platform_name} EXCLUSIVE` : 'RIFATRONS EXCLUSIVE'}
                 </div>
 
+                {platformSettings?.logo_url && (
+                    <img
+                        src={platformSettings.logo_url}
+                        alt="Logo de plataforma"
+                        className="h-16 md:h-20 lg:h-24 w-auto object-contain mb-8 drop-shadow-2xl"
+                    />
+                )}
+
                 <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient">
                     {raffle.name}
                 </h1>

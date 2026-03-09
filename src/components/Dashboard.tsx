@@ -24,7 +24,8 @@ import {
     Palette,
     Link as LinkIcon,
     FileText,
-    Save
+    Save,
+    Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -54,6 +55,8 @@ export default function Dashboard() {
     });
     const [savingSettings, setSavingSettings] = useState(false);
     const [settingsSuccess, setSettingsSuccess] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [settingsError, setSettingsError] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -71,6 +74,33 @@ export default function Dashboard() {
     async function fetchSettings() {
         const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
         if (data) setSettings(data);
+    }
+
+    async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingLogo(true);
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `logo-${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('brand_assets')
+                .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('brand_assets').getPublicUrl(fileName);
+
+            setSettings({ ...settings, logo_url: data.publicUrl });
+        } catch (err: any) {
+            console.error('Upload error:', err);
+            setSettingsError(err.message || 'Error al subir la imagen. Verifica el formato y peso.');
+            setTimeout(() => setSettingsError(''), 4000);
+        } finally {
+            setUploadingLogo(false);
+        }
     }
 
     async function handleSaveSettings(e: FormEvent) {
@@ -809,7 +839,7 @@ export default function Dashboard() {
                                                 const hour = new Date(item.created_at).getHours();
                                                 acc[hour] = (acc[hour] || 0) + 1;
                                                 return acc;
-                                            }, {})).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([hour, count]: any, index) => {
+                                            }, {})).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5).map(([hour, count]: any) => {
                                                 const formattedHour = `${hour.toString().padStart(2, '0')}:00`;
                                                 const maxCount = Math.max(...Object.values(analyticsData.reduce((acc: any, item) => {
                                                     const h = new Date(item.created_at).getHours();
@@ -851,11 +881,11 @@ export default function Dashboard() {
                                                 acc[email].count += 1;
                                                 acc[email].spent += (Number(item.amount_paid) || 0);
                                                 return acc;
-                                            }, {})).sort((a: any, b: any) => b[1].spent - a[1].spent).slice(0, 5).map(([email, stats]: any, index: number) => (
+                                            }, {})).sort((a: any, b: any) => b[1].spent - a[1].spent).slice(0, 5).map(([email, stats]: any, listIndex: number) => (
                                                 <div key={email} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-8 h-8 rounded-full bg-yellow-500/10 text-yellow-500 flex items-center justify-center font-black text-xs border border-yellow-500/20">
-                                                            #{index + 1}
+                                                            #{listIndex + 1}
                                                         </div>
                                                         <div className="overflow-hidden">
                                                             <div className="font-bold text-sm truncate max-w-[120px] sm:max-w-[200px]" title={email}>{email}</div>
@@ -922,15 +952,53 @@ export default function Dashboard() {
                                             />
                                         </div>
                                     </div>
-                                    <div className="space-y-2 md:col-span-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">URL del Logo (Opcional)</label>
-                                        <input
-                                            type="url"
-                                            value={settings.logo_url || ''}
-                                            onChange={(e) => setSettings({ ...settings, logo_url: e.target.value })}
-                                            placeholder="https://tudominio.com/logo.png"
-                                            className="premium-input w-full"
-                                        />
+                                    <div className="space-y-4 md:col-span-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Logo de la Plataforma (Opcional)</label>
+                                        <div className="flex items-center gap-6">
+                                            {settings.logo_url ? (
+                                                <div className="relative group w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                                                    <img src={settings.logo_url} alt="Logo" className="max-w-full max-h-full object-contain p-2" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSettings({ ...settings, logo_url: '' })}
+                                                        className="absolute inset-0 bg-red-500/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                                        title="Eliminar logo"
+                                                    >
+                                                        <X className="text-white" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 border-dashed flex items-center justify-center text-white/20">
+                                                    <Palette size={32} />
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1">
+                                                <div className="relative inline-block">
+                                                    <button
+                                                        type="button"
+                                                        disabled={uploadingLogo}
+                                                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    >
+                                                        {uploadingLogo ? (
+                                                            <div className="w-5 h-5 border-2 border-primary/50 border-t-primary rounded-full animate-spin"></div>
+                                                        ) : (
+                                                            <>
+                                                                <Upload size={18} className="text-primary" /> Subir Imagen
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/png, image/jpeg, image/svg+xml"
+                                                        onChange={handleLogoUpload}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                                        disabled={uploadingLogo}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-white/30 italic mt-3 max-w-sm">Recomendamos: Imagen cuadrada (512x512px) o rectangular (400x150px). Formato PNG con fondo transparente o SVG. Peso menor a 1MB.</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1007,6 +1075,26 @@ export default function Dashboard() {
                                     <div>
                                         <h4 className="font-bold">¡Guardado Exitoso!</h4>
                                         <p className="text-white/40 text-sm">Tus ajustes se han aplicado a la plataforma.</p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Modal de error de Settings */}
+                        <AnimatePresence>
+                            {settingsError && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 50 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 50 }}
+                                    className="fixed bottom-6 right-6 glass-panel py-4 px-6 border-red-500/30 flex items-center gap-4 z-50 pointer-events-none"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold">
+                                        !
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold">Error</h4>
+                                        <p className="text-white/40 text-sm">{settingsError}</p>
                                     </div>
                                 </motion.div>
                             )}
