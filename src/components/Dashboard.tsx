@@ -511,7 +511,7 @@ export default function Dashboard() {
                             <div className="flex items-center justify-between mb-8">
                                 <div>
                                     <h2 className="text-3xl font-display font-black text-gradient">Mis Sorteos</h2>
-                                    <p className="text-white/40">Gestiona tus rifas y obtén los enlaces para ManyChat.</p>
+                                    <p className="text-white/40">Gestiona tus rifas y obtén los enlaces de participación.</p>
                                 </div>
                             </div>
 
@@ -557,26 +557,43 @@ export default function Dashboard() {
                                                     Editar
                                                 </button>
                                                 <div className="flex gap-2">
-                                                    {!raffle.is_paid && (
+                                                    {/* ManyChat components - ONLY for free raffles */}
+                                                    {raffle.is_paid !== true && (
                                                         <>
                                                             <button
                                                                 className="py-3 px-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold hover:bg-indigo-500/20 transition-colors flex items-center justify-center gap-2"
                                                                 onClick={() => handleGenerateTestLink(raffle.id)}
+                                                                title="Generar link de prueba para ManyChat"
                                                             >
-                                                                <Zap size={14} /> Link de Prueba
+                                                                <Zap size={14} /> Link ManyChat
                                                             </button>
                                                             <button
                                                                 className="py-3 px-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
                                                                 onClick={() => {
                                                                     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}`;
                                                                     navigator.clipboard.writeText(url);
-                                                                    alert('URL Webhook copiada para ManyChat');
+                                                                    alert('URL de Webhook copiada');
                                                                 }}
+                                                                title="Webhook para ManyChat"
                                                             >
                                                                 <ExternalLink size={14} /> Webhook
                                                             </button>
                                                         </>
                                                     )}
+
+                                                    {/* Direct Raffle Link - ALWAYS available, especially for Paid raffles */}
+                                                    <button
+                                                        className="py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                                                        onClick={() => {
+                                                            const url = `${window.location.origin}/raffle/${raffle.id}`;
+                                                            navigator.clipboard.writeText(url);
+                                                            alert('Link del sorteo copiado para redes sociales');
+                                                        }}
+                                                        title="Link directo para compartir en redes sociales"
+                                                    >
+                                                        <LinkIcon size={14} className="text-primary" /> Link Redes
+                                                    </button>
+
                                                     {raffle.active && (
                                                         <button
                                                             className="py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
