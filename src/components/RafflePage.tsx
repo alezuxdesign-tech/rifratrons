@@ -10,6 +10,7 @@ export default function RafflePage() {
     const [code, setCode] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState<any>(null);
+    const [selectedBundle, setSelectedBundle] = useState<any>(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -55,6 +56,12 @@ export default function RafflePage() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
+        if (raffle?.ticket_bundles?.length > 0 && !selectedBundle) {
+            setError('Por favor selecciona un paquete de tickets antes de participar.');
+            return;
+        }
+
         setSubmitting(true);
         setError('');
 
@@ -83,7 +90,8 @@ export default function RafflePage() {
                 p_raffle_id: raffle.id,
                 p_code: code,
                 p_name: formData.name,
-                p_email: formData.email
+                p_email: formData.email,
+                p_tickets_count: selectedBundle ? selectedBundle.tickets : 1
             });
 
             if (rpcError) throw rpcError;
@@ -190,6 +198,34 @@ export default function RafflePage() {
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
+                                {raffle?.ticket_bundles && raffle.ticket_bundles.length > 0 && (
+                                    <div className="space-y-3 mb-8">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1 block">Selecciona tu Paquete</label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            {raffle.ticket_bundles.map((bundle: any) => (
+                                                <button
+                                                    key={bundle.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedBundle(bundle);
+                                                        setError('');
+                                                    }}
+                                                    className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${selectedBundle?.id === bundle.id
+                                                            ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(37,99,235,0.3)]'
+                                                            : 'bg-white/5 border-white/10 hover:border-white/30'
+                                                        }`}
+                                                >
+                                                    <div className="font-bold text-lg mb-1">{bundle.name}</div>
+                                                    <div className="flex justify-between items-end">
+                                                        <span className="text-sm text-white/60">{bundle.tickets} Tickets</span>
+                                                        <span className="font-mono text-primary font-bold">${bundle.price}</span>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
                                     <div className="relative group">
@@ -280,14 +316,24 @@ export default function RafflePage() {
                                 <CheckCircle size={48} />
                             </div>
                             <h2 className="text-4xl font-display font-black mb-4">¡Estás dentro!</h2>
-                            <p className="text-white/40 mb-10 text-lg">Tu número de la suerte ha sido asignado:</p>
+                            <p className="text-white/40 mb-10 text-lg">{(success.assigned_numbers && success.assigned_numbers.length > 1) ? 'Tus números de la suerte han sido asignados:' : 'Tu número de la suerte ha sido asignado:'}</p>
 
                             <div className="relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
                                 <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
-                                    <span className="text-6xl sm:text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
-                                        #{success.assigned_number.toString().padStart(6, '0')}
-                                    </span>
+                                    {(success.assigned_numbers && success.assigned_numbers.length > 1) ? (
+                                        <div className="flex flex-wrap items-center justify-center gap-4 max-h-[40vh] overflow-y-auto">
+                                            {success.assigned_numbers.map((num: number) => (
+                                                <span key={num} className="text-3xl sm:text-4xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
+                                                    #{num.toString().padStart(6, '0')}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <span className="text-6xl sm:text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
+                                            #{success.assigned_number?.toString().padStart(6, '0')}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

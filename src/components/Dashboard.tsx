@@ -25,7 +25,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState({ name: '', total_numbers: 100000, reserved_numbers: '' });
+    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[] }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [] });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -119,7 +119,7 @@ export default function Dashboard() {
             alert('Error al crear la rifa: ' + error.message);
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '' });
+            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [] });
             fetchData();
         }
         setCreating(false);
@@ -143,7 +143,8 @@ export default function Dashboard() {
                 name: editingRaffle.name,
                 active: editingRaffle.active,
                 total_numbers: editingRaffle.total_numbers,
-                reserved_numbers: reservedNumbersArray
+                reserved_numbers: reservedNumbersArray,
+                ticket_bundles: editingRaffle.ticket_bundles || []
             })
             .eq('id', editingRaffle.id);
 
@@ -635,6 +636,50 @@ export default function Dashboard() {
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar. Ideal si no quieres que la rifa empiece desde el 0.</p>
                                 </div>
 
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Paquetes de Tickets (Opcional)</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setNewRaffle({ ...newRaffle, ticket_bundles: [...(newRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] })}
+                                            className="text-xs text-primary font-bold px-3 py-1 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                                        >
+                                            + Añadir Paquete
+                                        </button>
+                                    </div>
+                                    {(newRaffle.ticket_bundles || []).map((bundle: any, index: number) => (
+                                        <div key={bundle.id} className="flex gap-2 items-center bg-white/5 p-3 rounded-xl border border-white/10">
+                                            <input type="text" placeholder="Nombre (ej: Combo x5)" value={bundle.name} onChange={(e) => {
+                                                const newB = [...newRaffle.ticket_bundles];
+                                                newB[index].name = e.target.value;
+                                                setNewRaffle({ ...newRaffle, ticket_bundles: newB });
+                                            }} className="premium-input w-[40%] text-sm py-2" required />
+                                            <input type="number" placeholder="Tickets" min="1" value={bundle.tickets || ''} onChange={(e) => {
+                                                const newB = [...newRaffle.ticket_bundles];
+                                                newB[index].tickets = parseInt(e.target.value) || 0;
+                                                setNewRaffle({ ...newRaffle, ticket_bundles: newB });
+                                            }} className="premium-input w-[25%] text-sm py-2" required />
+                                            <div className="relative w-[25%]">
+                                                <span className="absolute left-3 top-2 text-white/40 font-mono">$</span>
+                                                <input type="number" placeholder="Precio" min="0" step="0.01" value={bundle.price} onChange={(e) => {
+                                                    const newB = [...newRaffle.ticket_bundles];
+                                                    newB[index].price = parseFloat(e.target.value) || 0;
+                                                    setNewRaffle({ ...newRaffle, ticket_bundles: newB });
+                                                }} className="premium-input w-full pl-6 text-sm py-2 font-mono" required />
+                                            </div>
+                                            <button type="button" onClick={() => {
+                                                const newB = newRaffle.ticket_bundles.filter((_, i) => i !== index);
+                                                setNewRaffle({ ...newRaffle, ticket_bundles: newB });
+                                            }} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg ml-auto shrink-0 transition-colors">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(newRaffle.ticket_bundles?.length === 0) && (
+                                        <p className="text-[10px] text-white/30 ml-1 italic">Si no añades paquetes, se habilitará únicamente la participación de 1 en 1 de forma gratuita.</p>
+                                    )}
+                                </div>
+
                                 <button
                                     type="submit"
                                     className="glow-button w-full mt-4"
@@ -711,6 +756,50 @@ export default function Dashboard() {
                                         className="premium-input w-full"
                                     />
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Paquetes de Tickets</label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingRaffle({ ...editingRaffle, ticket_bundles: [...(editingRaffle.ticket_bundles || []), { id: crypto.randomUUID(), name: '', tickets: 1, price: 0 }] })}
+                                            className="text-xs text-primary font-bold px-3 py-1 bg-primary/10 rounded-lg hover:bg-primary/20 transition-colors"
+                                        >
+                                            + Añadir Paquete
+                                        </button>
+                                    </div>
+                                    {(editingRaffle.ticket_bundles || []).map((bundle: any, index: number) => (
+                                        <div key={bundle.id || index} className="flex gap-2 items-center bg-white/5 p-3 rounded-xl border border-white/10">
+                                            <input type="text" placeholder="Nombre (ej: Combo)" value={bundle.name} onChange={(e) => {
+                                                const newB = [...editingRaffle.ticket_bundles];
+                                                newB[index].name = e.target.value;
+                                                setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
+                                            }} className="premium-input w-[40%] text-sm py-2" required />
+                                            <input type="number" placeholder="Tickets" min="1" value={bundle.tickets || ''} onChange={(e) => {
+                                                const newB = [...editingRaffle.ticket_bundles];
+                                                newB[index].tickets = parseInt(e.target.value) || 0;
+                                                setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
+                                            }} className="premium-input w-[25%] text-sm py-2" required />
+                                            <div className="relative w-[25%]">
+                                                <span className="absolute left-3 top-2 text-white/40 font-mono">$</span>
+                                                <input type="number" placeholder="Precio" min="0" step="0.01" value={bundle.price} onChange={(e) => {
+                                                    const newB = [...editingRaffle.ticket_bundles];
+                                                    newB[index].price = parseFloat(e.target.value) || 0;
+                                                    setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
+                                                }} className="premium-input w-full pl-6 text-sm py-2 font-mono" required />
+                                            </div>
+                                            <button type="button" onClick={() => {
+                                                const newB = editingRaffle.ticket_bundles.filter((_: any, i: number) => i !== index);
+                                                setEditingRaffle({ ...editingRaffle, ticket_bundles: newB });
+                                            }} className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg ml-auto shrink-0 transition-colors">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {(editingRaffle.ticket_bundles?.length === 0 || !editingRaffle.ticket_bundles) && (
+                                        <p className="text-[10px] text-white/30 ml-1 italic">Sin paquetes configurados.</p>
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
