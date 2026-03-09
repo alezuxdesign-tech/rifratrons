@@ -32,7 +32,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Dashboard() {
     const [raffles, setRaffles] = useState<any[]>([]);
-    const [stats, setStats] = useState({ totalParticipants: 0, activeRaffles: 0 });
+    const [stats, setStats] = useState({ totalParticipants: 0, totalTickets: 0, activeRaffles: 0 });
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
@@ -157,25 +157,33 @@ export default function Dashboard() {
     }
 
     async function fetchData() {
+        // Fetch raffles joined with statistics view for correct ticket sum
         const { data: rafflesData } = await supabase
             .from('raffles')
-            .select('*, participants(count)')
+            .select('*, stats:raffle_stats(total_tickets_sold)')
             .order('created_at', { ascending: false });
 
+        // Total registered participants (records)
         const { count: participantsCount } = await supabase.from('participants').select('*', { count: 'exact', head: true });
 
+        // Total global tickets sold
+        const { data: globalStats } = await supabase.from('raffle_stats').select('total_tickets_sold');
+        const totalTicketsGlobal = globalStats?.reduce((acc, curr) => acc + (curr.total_tickets_sold || 0), 0) || 0;
+
         if (rafflesData) {
-            // Flatten the count from participants join
             const rafflesWithCounts = rafflesData.map(r => ({
                 ...r,
-                participants_count: r.participants[0]?.count || 0
+                // Use the summed tickets from the view instead of record count
+                participants_count: r.stats?.[0]?.total_tickets_sold || 0
             }));
 
             setRaffles(rafflesWithCounts);
             setStats({
                 totalParticipants: participantsCount || 0,
+                totalTickets: totalTicketsGlobal,
                 activeRaffles: rafflesData.filter(r => r.active).length
             });
+            // Update the Tickets stat card in the UI if needed, but the raffles list will use participants_count
         }
         setLoading(false);
     }
@@ -438,7 +446,7 @@ export default function Dashboard() {
                         {/* Stats Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                             <StatCard title="Participantes" value={stats.totalParticipants.toLocaleString()} sub="Registros hoy" icon={<Users className="text-primary" />} gradient="from-blue-500/20 to-transparent" />
-                            <StatCard title="Tickets" value={stats.totalParticipants.toLocaleString()} sub="Asignados" icon={<Ticket className="text-emerald-500" />} gradient="from-emerald-500/20 to-transparent" />
+                            <StatCard title="Tickets" value={stats.totalTickets.toLocaleString()} sub="Asignados" icon={<Ticket className="text-emerald-500" />} gradient="from-emerald-500/20 to-transparent" />
                             <StatCard title="Ingresos" value="$0.00" sub="Fase MVP Gratis" icon={<TrendingUp className="text-amber-500" />} gradient="from-amber-500/20 to-transparent" />
                         </div>
 
