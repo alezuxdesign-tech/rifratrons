@@ -731,10 +731,10 @@ export default function Dashboard() {
                                                             <Sparkles size={12} /> Link Mágico (ManyChat)
                                                         </p>
                                                         <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
-                                                            https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id={raffle.id}&redirect=true
+                                                            {import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id={raffle.id}&redirect=true
                                                             <button
                                                                 onClick={() => {
-                                                                    navigator.clipboard.writeText(`https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
+                                                                    navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
                                                                     showAlert('Copiado', 'Link Mágico copiado correctamente.', 'success');
                                                                 }}
                                                                 className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"

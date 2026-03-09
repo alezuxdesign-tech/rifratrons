@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
     const { name, email, assigned_numbers, raffle_name, password, primary_color } = body;
 
     const mainColor = primary_color || '#3b82f6';
-    const baseUrl = Deno.env.get('FRONTEND_URL') || 'https://darkgray-louse-764129.hostingersite.com';
+    const baseUrl = Deno.env.get('FRONTEND_URL') || 'https://tiketstrons.com';
 
     // Prepare ticket cards
     // Use assigned_numbers (array) or fallback to assigned_number (single)
