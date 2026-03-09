@@ -29,6 +29,7 @@ import {
     Search
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import BrandedModal from './BrandedModal';
 
 export default function Dashboard() {
     const [raffles, setRaffles] = useState<any[]>([]);
@@ -48,6 +49,27 @@ export default function Dashboard() {
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterBundle, setFilterBundle] = useState('');
+
+    const [brandedModal, setBrandedModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        type: 'info' | 'success' | 'warning' | 'error' | 'confirm';
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info'
+    });
+
+    const showAlert = (title: string, message: string, type: any = 'info') => {
+        setBrandedModal({ isOpen: true, title, message, type, onConfirm: undefined });
+    };
+
+    const showConfirm = (title: string, message: string, onConfirm: () => void) => {
+        setBrandedModal({ isOpen: true, title, message, type: 'confirm', onConfirm });
+    };
 
     const [settings, setSettings] = useState<any>({
         platform_name: 'Rifatrons',
@@ -201,21 +223,27 @@ export default function Dashboard() {
     }
 
     const handleDeleteRaffle = async (id: string) => {
-        if (!confirm('¿Estás seguro de eliminar esta rifa? Se borrarán todos los códigos y participantes asociados.')) return;
-        setDeleting(true);
-        try {
-            const { error } = await supabase.from('raffles').delete().eq('id', id);
+        showConfirm(
+            'Eliminar Rifa',
+            '¿Estás seguro de eliminar esta rifa? Se borrarán todos los códigos y participantes asociados.',
+            async () => {
+                setDeleting(true);
+                try {
+                    const { error } = await supabase.from('raffles').delete().eq('id', id);
 
-            if (error) {
-                alert('Error al eliminar: ' + error.message);
-            } else {
-                fetchData();
+                    if (error) {
+                        showAlert('Error', 'No se pudo eliminar: ' + error.message, 'error');
+                    } else {
+                        fetchData();
+                        showAlert('Eliminada', 'La rifa ha sido eliminada correctamente.', 'success');
+                    }
+                } catch (err) {
+                    showAlert('Error', 'Error de conexión al eliminar: ' + err, 'error');
+                } finally {
+                    setDeleting(false);
+                }
             }
-        } catch (err) {
-            alert('Error de conexión al eliminar: ' + err);
-        } finally {
-            setDeleting(false);
-        }
+        );
     };
 
     const handleLogout = async () => {
@@ -232,11 +260,15 @@ export default function Dashboard() {
 
             if (data?.raffle_url) {
                 navigator.clipboard.writeText(data.raffle_url);
-                alert('¡Link Único generado y copiado!\n\nEste link es para un solo uso y simula lo que ManyChat enviaría al usuario:\n' + data.raffle_url);
+                showAlert(
+                    'Link Generado',
+                    '¡Link Único generado y copiado!\n\nEste link es para un solo uso y simula lo que ManyChat enviaría al usuario.',
+                    'success'
+                );
             }
         } catch (err) {
             console.error('Test link error:', err);
-            alert('Error generando link: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
+            showAlert('Error', 'Error generando link: ' + (err instanceof Error ? err.message : JSON.stringify(err)), 'error');
         }
     };
 
@@ -254,7 +286,7 @@ export default function Dashboard() {
         ]);
 
         if (error) {
-            alert('Error al crear la rifa: ' + error.message);
+            showAlert('Error', 'No se pudo crear la rifa: ' + error.message, 'error');
         } else {
             setIsModalOpen(false);
             setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0 });
@@ -289,10 +321,11 @@ export default function Dashboard() {
             .eq('id', editingRaffle.id);
 
         if (error) {
-            alert('Error al actualizar: ' + error.message);
+            showAlert('Error', 'No se pudo actualizar: ' + error.message, 'error');
         } else {
             setEditModalOpen(false);
             fetchData();
+            showAlert('Actualizada', 'Rifa actualizada con éxito.', 'success');
         }
         setCreating(false);
     };
@@ -318,8 +351,6 @@ export default function Dashboard() {
     };
 
     const handlePickWinner = async (raffleId: string) => {
-        if (!confirm('¿Estás seguro de finalizar esta rifa y sortear un ganador ahora?')) return;
-
         try {
             // 1. Get all assigned numbers for this raffle
             const { data: participants, error: pError } = await supabase
@@ -329,7 +360,7 @@ export default function Dashboard() {
 
             if (pError) throw pError;
             if (!participants || participants.length === 0) {
-                alert('No hay participantes registrados para esta rifa todavía.');
+                showAlert('Atención', 'No hay participantes registrados para esta rifa todavía.', 'info');
                 return;
             }
 
@@ -337,22 +368,36 @@ export default function Dashboard() {
             const randomIndex = Math.floor(Math.random() * participants.length);
             const winnerNumber = participants[randomIndex].assigned_number;
 
-            // 3. Update raffle status and winning number
-            const { error: uError } = await supabase
-                .from('raffles')
-                .update({
-                    active: false,
-                    winning_number: winnerNumber
-                })
-                .eq('id', raffleId);
+            showConfirm(
+                'Finalizar Sorteo',
+                '¿Estás seguro de finalizar esta rifa y elegir el ganador ahora?',
+                async () => {
+                    try {
+                        // 3. Update raffle status and winning number
+                        const { error: uError } = await supabase
+                            .from('raffles')
+                            .update({
+                                active: false,
+                                winning_number: winnerNumber
+                            })
+                            .eq('id', raffleId);
 
-            if (uError) throw uError;
+                        if (uError) throw uError;
 
-            alert('¡Rifa Finalizada!\n\nEl número ganador es: #' + winnerNumber.toString().padStart(6, '0'));
-            fetchData();
+                        fetchData();
+                        showAlert(
+                            '¡Tenemos Ganador!',
+                            'La rifa ha finalizado.\nEl número ganador es: #' + winnerNumber.toString().padStart(6, '0'),
+                            'success'
+                        );
+                    } catch (err: any) {
+                        showAlert('Error', 'Error al finalizar: ' + (err.message || err), 'error');
+                    }
+                }
+            );
         } catch (err: any) {
-            console.error('Pick winner error:', err);
-            alert('Error al sortear: ' + err.message);
+            console.error('Error in handlePickWinner:', err);
+            showAlert('Error', 'Ocurrió un error inesperado al realizar el sorteo.', 'error');
         }
     };
 
@@ -572,9 +617,9 @@ export default function Dashboard() {
                                                                 onClick={() => {
                                                                     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}`;
                                                                     navigator.clipboard.writeText(url);
-                                                                    alert('URL de Webhook copiada');
+                                                                    showAlert('Copiado', 'Link de Webhook copiado para ManyChat', 'success');
                                                                 }}
-                                                                title="Webhook para ManyChat"
+                                                                title="Copiar URL para el bloque External Request de ManyChat"
                                                             >
                                                                 <ExternalLink size={14} /> Webhook
                                                             </button>
@@ -587,7 +632,7 @@ export default function Dashboard() {
                                                         onClick={() => {
                                                             const url = `${window.location.origin}/raffle/${raffle.id}`;
                                                             navigator.clipboard.writeText(url);
-                                                            alert('Link del sorteo copiado para redes sociales');
+                                                            showAlert('Copiado', 'Link del sorteo copiado para redes sociales', 'success');
                                                         }}
                                                         title="Link directo para compartir en redes sociales"
                                                     >
@@ -639,7 +684,7 @@ export default function Dashboard() {
                                                 <button
                                                     onClick={() => {
                                                         navigator.clipboard.writeText(`${window.location.origin}/?raffle=${raffle.id}`);
-                                                        alert('Link Público copiado. Úsalo en Instagram, Facebook o WhatsApp.');
+                                                        showAlert('Copiado', 'Link Público copiado. Úsalo en Instagram, Facebook o WhatsApp.', 'success');
                                                     }}
                                                     className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-primary/20 text-white opacity-0 group-hover/link:opacity-100 transition-opacity backdrop-blur-md"
                                                     title="Copiar Link"
@@ -660,7 +705,7 @@ export default function Dashboard() {
                                                             <button
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(`https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
-                                                                    alert('Link Mágico copiado');
+                                                                    showAlert('Copiado', 'Link Mágico copiado correctamente.', 'success');
                                                                 }}
                                                                 className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
                                                             >
@@ -679,7 +724,7 @@ export default function Dashboard() {
                                                             <button
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(`{ "raffle_id": "${raffle.id}" }`);
-                                                                    alert('JSON copiado');
+                                                                    showAlert('Copiado', 'JSON copiado para configuración avanzada.', 'success');
                                                                 }}
                                                                 className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
                                                             >
@@ -1634,6 +1679,15 @@ export default function Dashboard() {
                     </div>
                 )}
             </AnimatePresence>
+
+            <BrandedModal
+                isOpen={brandedModal.isOpen}
+                onClose={() => setBrandedModal({ ...brandedModal, isOpen: false })}
+                onConfirm={brandedModal.onConfirm}
+                title={brandedModal.title}
+                message={brandedModal.message}
+                type={brandedModal.type}
+            />
         </div>
     );
 }

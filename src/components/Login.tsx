@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lock, Mail, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import BrandedModal from './BrandedModal';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
     const [loading, setLoading] = useState(false);
@@ -9,6 +10,12 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [brandedModal, setBrandedModal] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        type: 'info' as 'info' | 'success' | 'warning' | 'error' | 'confirm'
+    });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,7 +31,12 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 setError(signUpError.message);
                 setLoading(false);
             } else {
-                alert('Cuenta creada. Ahora puedes iniciar sesión.');
+                setBrandedModal({
+                    isOpen: true,
+                    title: '¡Cuenta Creada!',
+                    message: 'Tu cuenta de administrador ha sido configurada correctamente. Ahora puedes iniciar sesión.',
+                    type: 'success'
+                });
                 setIsSignUp(false);
                 setLoading(false);
             }
@@ -124,6 +136,14 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                     RIFATRONS SECURE ARCHITECTURE
                 </div>
             </motion.div>
+
+            <BrandedModal
+                isOpen={brandedModal.isOpen}
+                onClose={() => setBrandedModal({ ...brandedModal, isOpen: false })}
+                title={brandedModal.title}
+                message={brandedModal.message}
+                type={brandedModal.type}
+            />
         </div>
     );
 }
