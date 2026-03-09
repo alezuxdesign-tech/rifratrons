@@ -256,30 +256,32 @@ export default function RafflePage() {
                 </div>
             </header>
 
-            <main className="flex-grow pt-24 pb-20">
-                <div className="container max-w-4xl mx-auto px-4">
-                    {/* Raffle Portada */}
-                    {raffle.image_url && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="relative w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl aspect-[16/9] mb-12"
-                        >
-                            <img
-                                src={raffle.image_url}
-                                alt="Portada"
-                                className="w-full h-full object-cover"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                            <div className="absolute bottom-6 left-8">
-                                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2 inline-block shadow-lg">En curso</span>
+            <main className="flex-grow pt-20">
+                {/* Raffle Portada - Full Width */}
+                {raffle.image_url && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="relative w-full h-[40vh] md:h-[60vh] overflow-hidden border-b border-white/10"
+                    >
+                        <img
+                            src={raffle.image_url}
+                            alt="Portada"
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-transparent to-transparent"></div>
+                        <div className="absolute bottom-8 left-0 right-0">
+                            <div className="container max-w-6xl mx-auto px-4">
+                                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full shadow-lg">En curso</span>
                             </div>
-                        </motion.div>
-                    )}
+                        </div>
+                    </motion.div>
+                )}
 
+                <div className="container max-w-4xl mx-auto px-4 py-16">
                     {/* Raffle Info */}
                     <div className="text-center mb-16">
-                        <h1 className="text-5xl md:text-6xl font-display font-black mb-6 leading-[1.1] text-gradient mx-auto max-w-2xl">
+                        <h1 className="text-5xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient mx-auto max-w-3xl">
                             {raffle.name}
                         </h1>
                         <p className="text-xl text-white/50 leading-relaxed max-w-xl mx-auto">
