@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
-import { Ticket, User, Mail, Send, AlertCircle, CheckCircle, ExternalLink, Search, Phone, CreditCard, X } from 'lucide-react';
+import { Ticket, Mail, Send, AlertCircle, CheckCircle, Search, Phone, CreditCard, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RafflePage() {
@@ -230,333 +230,318 @@ export default function RafflePage() {
     }
 
     return (
-        <div className="min-h-screen pt-12 md:pt-20 pb-12 px-4 container max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left Side: Branding & Info */}
-            <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-            >
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-wider mb-8 uppercase">
-                    <ExternalLink size={16} fill="currentColor" /> {platformSettings?.platform_name ? `${platformSettings.platform_name} EXCLUSIVE` : 'RIFATRONS EXCLUSIVE'}
-                </div>
-
-                {platformSettings?.logo_url && (
-                    <img
-                        src={platformSettings.logo_url}
-                        alt="Logo de plataforma"
-                        className="h-16 md:h-20 lg:h-24 w-auto object-contain mb-8 drop-shadow-2xl"
-                    />
-                )}
-
-                <h1 className="text-5xl sm:text-6xl md:text-7xl font-display font-black mb-6 leading-[1.1] text-gradient">
-                    {raffle.name}
-                </h1>
-
-                <p className="text-xl text-white/50 mb-10 leading-relaxed max-w-lg">
-                    Participa en la plataforma de rifas más segura y moderna.
-                    Validación inmediata, asignación transparente y premios reales.
-                </p>
-
-                <div className="grid sm:grid-cols-2 gap-6 mb-12">
-                    <FeatureItem icon={<CheckCircle className="text-emerald-500" />} title="Transparencia" desc="Algoritmo de asignación verificable" />
-                    <FeatureItem icon={<Send className="text-amber-500" />} title="Instantáneo" desc="Recibe tu número al momento" />
-                    <FeatureItem icon={<Ticket className="text-primary" />} title="Seguro" desc="Plataforma encriptada y confiable" />
-                    <FeatureItem icon={<User className="text-indigo-400" />} title="Soporte VIP" desc="Atención personalizada 24/7" />
-                </div>
-
-                {raffle.image_url && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl aspect-[16/9] group"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
+        <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col">
+            {/* Header */}
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0c]/80 backdrop-blur-xl border-b border-white/5">
+                <div className="container max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+                    {platformSettings?.logo_url ? (
                         <img
-                            src={raffle.image_url}
-                            alt="Portada de la rifa"
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            src={platformSettings.logo_url}
+                            alt="Logo"
+                            className="h-10 w-auto object-contain"
                         />
-                        <div className="absolute bottom-6 left-6 z-20">
-                            <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2 inline-block shadow-lg">En curso</span>
-                            <h3 className="text-2xl font-display font-black text-white drop-shadow-md">Portada de la Rifa</h3>
-                        </div>
-                    </motion.div>
-                )}
-            </motion.div>
-
-            {/* Right Side: Registration Card */}
-            <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="relative"
-            >
-                {/* Decorative Blobs */}
-                <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -z-10 animate-pulse"></div>
-                <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] -z-10"></div>
-
-                <AnimatePresence mode="wait">
-                    {success ? (
-                        <motion.div
-                            key="success"
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            className="glass-panel p-8 md:p-12 text-center border-emerald-500/20"
-                        >
-                            <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
-                                <CheckCircle size={48} />
-                            </div>
-                            <h2 className="text-4xl font-display font-black mb-4">¡Estás dentro!</h2>
-                            <p className="text-white/40 mb-10 text-lg">{(success.assigned_numbers && success.assigned_numbers.length > 1) ? 'Tus números de la suerte han sido asignados:' : 'Tu número de la suerte ha sido asignado:'}</p>
-
-                            <div className="relative overflow-hidden group">
-                                <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                                <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
-                                    {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
-                                        <div className="flex flex-wrap items-center justify-center gap-4 max-h-[40vh] overflow-y-auto">
-                                            {success.assigned_numbers.map((num: any) => (
-                                                <span key={num} className="text-3xl sm:text-4xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
-                                                    #{num.toString().padStart(6, '0')}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <span className="text-6xl sm:text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
-                                            #{success.assigned_number?.toString().padStart(6, '0')}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="glow-button w-full py-5 mt-10 flex items-center justify-center gap-2 text-lg font-bold"
-                            >
-                                Volver al Inicio
-                            </button>
-                        </motion.div>
-                    ) : (raffle?.is_paid && !showRegistrationForm) ? (
-                        <motion.div
-                            key="bundles"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
-                        >
-                            <div className="mb-10 text-center">
-                                <h2 className="text-3xl font-display font-bold mb-2 text-gradient">Elige tu Paquete</h2>
-                                <p className="text-white/40 text-sm">Selecciona cuántos tickets deseas para participar.</p>
-                            </div>
-
-                            <div className="space-y-4 mb-10">
-                                {raffle.ticket_bundles && raffle.ticket_bundles.length > 0 ? (
-                                    raffle.ticket_bundles.map((bundle: any) => (
-                                        <button
-                                            key={bundle.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedBundle(bundle);
-                                                setError('');
-                                            }}
-                                            className={`w-full p-6 rounded-2xl border text-left flex items-center justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
-                                                ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]'
-                                                : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.08]'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedBundle?.id === bundle.id ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
-                                                    <Ticket size={24} />
-                                                </div>
-                                                <div>
-                                                    <div className="font-black text-lg tracking-tight">{bundle.name}</div>
-                                                    <div className="text-sm text-white/40">{bundle.tickets} Tickets</div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-2xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
-                                            </div>
-                                        </button>
-                                    ))
-                                ) : (
-                                    <div className="p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
-                                        <p className="text-white/40">No hay paquetes configurados.</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button
-                                onClick={() => {
-                                    if (!selectedBundle && raffle.is_paid) {
-                                        setError('Selecciona un paquete para participar.');
-                                        return;
-                                    }
-                                    setShowRegistrationForm(true);
-                                }}
-                                className="glow-button w-full py-5 flex items-center justify-center gap-3 text-lg font-black"
-                            >
-                                Participar Ahora <Send size={20} />
-                            </button>
-
-                            {error && (
-                                <p className="mt-4 text-center text-red-400 text-sm font-bold">{error}</p>
-                            )}
-
-                            <div className="mt-8 pt-6 border-t border-white/5 text-center">
-                                <a href="/mis-tickets" className="text-white/20 hover:text-primary transition-colors text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2">
-                                    <Search size={14} /> Consultar mis tickets
-                                </a>
-                            </div>
-                        </motion.div>
                     ) : (
+                        <h2 className="text-xl font-display font-black tracking-tighter text-gradient">
+                            {platformSettings?.platform_name || 'RIFATRONS'}
+                        </h2>
+                    )}
+
+                    <a
+                        href="/mis-tickets"
+                        className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-white/60 hover:text-primary hover:border-primary/30 transition-all text-xs font-bold"
+                    >
+                        <Search size={14} />
+                        CONSULTAR TICKETS
+                    </a>
+                </div>
+            </header>
+
+            <main className="flex-grow pt-24 pb-20">
+                <div className="container max-w-4xl mx-auto px-4">
+                    {/* Raffle Portada */}
+                    {raffle.image_url && (
                         <motion.div
-                            key="registration"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="relative w-full rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl aspect-[16/9] mb-12"
                         >
-                            <div className="mb-8 relative">
-                                {raffle.is_paid && (
-                                    <button
-                                        onClick={() => setShowRegistrationForm(false)}
-                                        className="mb-4 text-white/40 hover:text-white text-xs font-bold flex items-center gap-2 transition-colors group"
-                                    >
-                                        <X size={14} /> Volver a paquetes
-                                    </button>
-                                )}
-                                <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
-                                <p className="text-white/40 text-sm">Completa tus datos para {(raffle.is_paid) ? `comprar ${selectedBundle?.name}` : 'obtener tu ticket gratis'}.</p>
+                            <img
+                                src={raffle.image_url}
+                                alt="Portada"
+                                className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                            <div className="absolute bottom-6 left-8">
+                                <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2 inline-block shadow-lg">En curso</span>
                             </div>
-
-                            <form onSubmit={handleSubmit} className="space-y-5">
-                                {!raffle.is_paid && (
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
-                                        <div className="relative group">
-                                            <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                            <input
-                                                type="text"
-                                                value={code}
-                                                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                                placeholder="ABC-XYZ"
-                                                className="premium-input pl-12 w-full py-3"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Nombre</label>
-                                        <input
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="premium-input w-full py-3"
-                                            required
-                                        />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Apellido</label>
-                                        <input
-                                            type="text"
-                                            value={formData.last_name}
-                                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                            className="premium-input w-full py-3"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Correo Electrónico</label>
-                                    <div className="relative group">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            placeholder="email@ejemplo.com"
-                                            className="premium-input pl-12 w-full py-3"
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
-                                        <div className="relative group">
-                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                            <input
-                                                type="tel"
-                                                value={formData.whatsapp}
-                                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                                                placeholder="+57..."
-                                                className="premium-input pl-12 w-full py-3"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
-                                        <div className="relative group">
-                                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                            <input
-                                                type="text"
-                                                value={formData.cedula}
-                                                onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
-                                                placeholder="Documento"
-                                                className="premium-input pl-12 w-full py-3 font-mono"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {error && (
-                                    <p className="text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={submitting}
-                                    className="glow-button w-full py-4 flex items-center justify-center gap-3 text-lg font-black mt-4"
-                                >
-                                    {submitting ? (
-                                        <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            {raffle.is_paid ? `Pagar ${formatCOP(selectedBundle?.price || 0)}` : 'Obtener Ticket Gratis'} <Send size={18} />
-                                        </>
-                                    )}
-                                </button>
-                            </form>
                         </motion.div>
                     )}
-                </AnimatePresence>
-            </motion.div>
 
-            <div className="lg:col-span-2 text-center text-[10px] text-white/10 uppercase tracking-[0.5em] mt-8 font-bold">
-                RIFATRONS &copy; 2026 • ADVANCED RAFFLE ARCHITECTURE
-            </div>
-        </div>
-    );
-}
+                    {/* Raffle Info */}
+                    <div className="text-center mb-16">
+                        <h1 className="text-5xl md:text-6xl font-display font-black mb-6 leading-[1.1] text-gradient mx-auto max-w-2xl">
+                            {raffle.name}
+                        </h1>
+                        <p className="text-xl text-white/50 leading-relaxed max-w-xl mx-auto">
+                            Participa en la plataforma de rifas más segura y moderna.
+                            Validación inmediata y premios reales.
+                        </p>
+                    </div>
 
-function FeatureItem({ icon, title, desc }: { icon: any, title: string, desc: string }) {
-    return (
-        <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 shrink-0 mt-1">
-                {icon}
-            </div>
-            <div>
-                <h4 className="font-bold text-white mb-0.5">{title}</h4>
-                <p className="text-xs text-white/30">{desc}</p>
-            </div>
+                    {/* Participation Section */}
+                    <div className="max-w-2xl mx-auto">
+                        <AnimatePresence mode="wait">
+                            {success ? (
+                                <motion.div
+                                    key="success"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="glass-panel p-8 md:p-12 text-center border-emerald-500/20"
+                                >
+                                    <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
+                                        <CheckCircle size={48} />
+                                    </div>
+                                    <h2 className="text-4xl font-display font-black mb-4">¡Estás dentro!</h2>
+                                    <p className="text-white/40 mb-10 text-lg">{(success.assigned_numbers && success.assigned_numbers.length > 1) ? 'Tus números de la suerte han sido asignados:' : 'Tu número de la suerte ha sido asignado:'}</p>
+
+                                    <div className="relative overflow-hidden group mb-10">
+                                        <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50"></div>
+                                        <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2.5rem] p-8 sm:p-12 relative z-10">
+                                            {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
+                                                <div className="flex flex-wrap items-center justify-center gap-4 max-h-[40vh] overflow-y-auto">
+                                                    {success.assigned_numbers.map((num: any) => (
+                                                        <span key={num} className="text-3xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
+                                                            #{num.toString().padStart(6, '0')}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-6xl sm:text-8xl font-black text-gradient tracking-tighter tabular-nums drop-shadow-2xl">
+                                                    #{success.assigned_number?.toString().padStart(6, '0')}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="glow-button w-full py-5 flex items-center justify-center gap-2 text-lg font-bold"
+                                    >
+                                        Volver al Inicio
+                                    </button>
+                                </motion.div>
+                            ) : (raffle?.is_paid && !showRegistrationForm) ? (
+                                <motion.div
+                                    key="bundles"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                                >
+                                    <div className="mb-10 text-center">
+                                        <h2 className="text-3xl font-display font-bold mb-2 text-gradient">Elige tu Paquete</h2>
+                                        <p className="text-white/40 text-sm">Selecciona cuántos tickets deseas para participar.</p>
+                                    </div>
+
+                                    <div className="space-y-4 mb-10">
+                                        {raffle.ticket_bundles && raffle.ticket_bundles.length > 0 ? (
+                                            raffle.ticket_bundles.map((bundle: any) => (
+                                                <button
+                                                    key={bundle.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSelectedBundle(bundle);
+                                                        setError('');
+                                                    }}
+                                                    className={`w-full p-6 rounded-2xl border text-left flex items-center justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
+                                                        ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]'
+                                                        : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.08]'
+                                                        }`}
+                                                >
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedBundle?.id === bundle.id ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
+                                                            <Ticket size={24} />
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-black text-lg tracking-tight">{bundle.name}</div>
+                                                            <div className="text-sm text-white/40">{bundle.tickets} Tickets</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-2xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
+                                                    </div>
+                                                </button>
+                                            ))
+                                        ) : (
+                                            <div className="p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
+                                                <p className="text-white/40">No hay paquetes configurados.</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            if (!selectedBundle && raffle.is_paid) {
+                                                setError('Selecciona un paquete para participar.');
+                                                return;
+                                            }
+                                            setShowRegistrationForm(true);
+                                        }}
+                                        className="glow-button w-full py-5 flex items-center justify-center gap-3 text-lg font-black"
+                                    >
+                                        Participar Ahora <Send size={20} />
+                                    </button>
+
+                                    {error && (
+                                        <p className="mt-4 text-center text-red-400 text-sm font-bold">{error}</p>
+                                    )}
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="registration"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                                >
+                                    <div className="mb-8 relative">
+                                        {raffle.is_paid && (
+                                            <button
+                                                onClick={() => setShowRegistrationForm(false)}
+                                                className="mb-4 text-white/40 hover:text-white text-xs font-bold flex items-center gap-2 transition-colors group"
+                                            >
+                                                <X size={14} /> Volver a paquetes
+                                            </button>
+                                        )}
+                                        <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
+                                        <p className="text-white/40 text-sm">Completa tus datos para {(raffle.is_paid) ? `comprar ${selectedBundle?.name}` : 'obtener tu ticket gratis'}.</p>
+                                    </div>
+
+                                    <form onSubmit={handleSubmit} className="space-y-5">
+                                        {!raffle.is_paid && (
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
+                                                <div className="relative group">
+                                                    <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        value={code}
+                                                        onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                                        placeholder="ABC-XYZ"
+                                                        className="premium-input pl-12 w-full py-3"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Nombre</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    className="premium-input w-full py-3"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Apellido</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.last_name}
+                                                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                    className="premium-input w-full py-3"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Correo Electrónico</label>
+                                            <div className="relative group">
+                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                <input
+                                                    type="email"
+                                                    value={formData.email}
+                                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                    placeholder="email@ejemplo.com"
+                                                    className="premium-input pl-12 w-full py-3"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
+                                                <div className="relative group">
+                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                    <input
+                                                        type="tel"
+                                                        value={formData.whatsapp}
+                                                        onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                                        placeholder="+57..."
+                                                        className="premium-input pl-12 w-full py-3"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
+                                                <div className="relative group">
+                                                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.cedula}
+                                                        onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                                                        placeholder="Documento"
+                                                        className="premium-input pl-12 w-full py-3 font-mono"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {error && (
+                                            <p className="text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="glow-button w-full py-4 flex items-center justify-center gap-3 text-lg font-black mt-4"
+                                        >
+                                            {submitting ? (
+                                                <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <>
+                                                    {raffle.is_paid ? `Pagar ${formatCOP(selectedBundle?.price || 0)}` : 'Obtener Ticket Gratis'} <Send size={18} />
+                                                </>
+                                            )}
+                                        </button>
+                                    </form>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </div>
+            </main>
+
+            <footer className="py-12 border-t border-white/5 bg-black/20">
+                <div className="container max-w-6xl mx-auto px-4 text-center">
+                    <div className="text-[10px] text-white/10 uppercase tracking-[0.5em] font-bold mb-4">
+                        RIFATRONS &copy; 2026 • ADVANCED RAFFLE ARCHITECTURE
+                    </div>
+                    {platformSettings?.terms_and_conditions && (
+                        <p className="text-[10px] text-white/30 max-w-md mx-auto leading-relaxed">
+                            Al participar, aceptas nuestros <a href="#" className="underline hover:text-white transition-colors" title={platformSettings.terms_and_conditions}>términos y condiciones</a>.
+                        </p>
+                    )}
+                </div>
+            </footer>
         </div>
     );
 }
