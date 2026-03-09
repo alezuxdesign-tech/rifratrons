@@ -99,6 +99,17 @@ export default function RafflePage() {
 
         if (data) {
             setRaffle(data);
+
+            // Check for previous participation persistence
+            const savedParticipation = localStorage.getItem(`raffle_participation_${data.id}`);
+            if (savedParticipation) {
+                try {
+                    setSuccess(JSON.parse(savedParticipation));
+                } catch (e) {
+                    console.error("Error parsing saved participation", e);
+                }
+            }
+
             // Auto-select if it's a free raffle and has exactly one bundle
             if (!data.is_paid && data.ticket_bundles?.length === 1) {
                 setSelectedBundle(data.ticket_bundles[0]);
@@ -186,6 +197,9 @@ export default function RafflePage() {
                 setError(result.message);
             } else {
                 setSuccess(result);
+
+                // Persist participation to prevent duplicate form view
+                localStorage.setItem(`raffle_participation_${raffle.id}`, JSON.stringify(result));
 
                 // Trigger email notification
                 supabase.functions.invoke('send-confirmation', {
