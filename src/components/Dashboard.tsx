@@ -629,7 +629,7 @@ export default function Dashboard() {
                                         </div>
 
                                         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 relative group/link">
+                                            <div className={`${raffle.is_paid ? 'md:col-span-3' : ''} p-6 rounded-2xl bg-primary/5 border border-primary/20 relative group/link`}>
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
                                                     <ExternalLink size={12} /> Link Público (Redes Sociales)
                                                 </p>
@@ -649,43 +649,47 @@ export default function Dashboard() {
                                                 <p className="mt-3 text-[9px] text-white/40 italic">Comparte este link para que los usuarios entren directo a esta rifa.</p>
                                             </div>
 
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-[#a855f7] mb-3 flex items-center gap-2">
-                                                    <Sparkles size={12} /> Link Mágico (ManyChat)
-                                                </p>
-                                                <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
-                                                    https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id={raffle.id}&redirect=true
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(`https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
-                                                            alert('Link Mágico copiado');
-                                                        }}
-                                                        className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                    >
-                                                        <ExternalLink size={12} />
-                                                    </button>
-                                                </div>
-                                                <p className="mt-3 text-[9px] text-white/30 italic">Pega este link en botones de ManyChat. Genera ticket automático.</p>
-                                            </div>
+                                            {raffle.is_paid !== true && (
+                                                <>
+                                                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#a855f7] mb-3 flex items-center gap-2">
+                                                            <Sparkles size={12} /> Link Mágico (ManyChat)
+                                                        </p>
+                                                        <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
+                                                            https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id={raffle.id}&redirect=true
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(`https://eruiyauxaftxrvwkoigi.supabase.co/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
+                                                                    alert('Link Mágico copiado');
+                                                                }}
+                                                                className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                                            >
+                                                                <ExternalLink size={12} />
+                                                            </button>
+                                                        </div>
+                                                        <p className="mt-3 text-[9px] text-white/30 italic">Pega este link en botones de ManyChat. Genera ticket automático.</p>
+                                                    </div>
 
-                                            <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
-                                                <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
-                                                    <Zap size={12} /> ManyChat POST (Avanzado)
-                                                </p>
-                                                <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
-                                                    {`{ "raffle_id": "${raffle.id}" }`}
-                                                    <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(`{ "raffle_id": "${raffle.id}" }`);
-                                                            alert('JSON copiado');
-                                                        }}
-                                                        className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                    >
-                                                        <ExternalLink size={12} />
-                                                    </button>
-                                                </div>
-                                                <p className="mt-3 text-[9px] text-white/30 italic">Para usar con 'External Request' y guardar la URL.</p>
-                                            </div>
+                                                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
+                                                            <Zap size={12} /> ManyChat POST (Avanzado)
+                                                        </p>
+                                                        <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
+                                                            {`{ "raffle_id": "${raffle.id}" }`}
+                                                            <button
+                                                                onClick={() => {
+                                                                    navigator.clipboard.writeText(`{ "raffle_id": "${raffle.id}" }`);
+                                                                    alert('JSON copiado');
+                                                                }}
+                                                                className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
+                                                            >
+                                                                <ExternalLink size={12} />
+                                                            </button>
+                                                        </div>
+                                                        <p className="mt-3 text-[9px] text-white/30 italic">Para usar con 'External Request' y guardar la URL.</p>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                         {!raffle.active && raffle.winning_number && (
                                             <div className="mt-8 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl flex items-center justify-between relative overflow-hidden group/winner">
