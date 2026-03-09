@@ -96,24 +96,39 @@ export default function RafflePage() {
         setError('');
 
         try {
-            // Generate a random password for the user
+            if (raffle.is_paid) {
+                // Generar Preferencia de MercadoPago
+                const payload = {
+                    raffle_id: raffle.id,
+                    name: formData.name,
+                    email: formData.email,
+                    bundle: selectedBundle || { name: 'Ticket Individual', tickets: 1, price: raffle.ticket_price }
+                };
+
+                const { data, error: mpError } = await supabase.functions.invoke('create-mp-preference', {
+                    body: payload
+                });
+
+                if (mpError) throw mpError;
+                if (!data?.init_point) throw new Error('No se pudo generar el enlace de pago. Intenta de nuevo.');
+
+                window.location.href = data.init_point;
+                return; // Redireccionado a MercadoPago, finalizamos función
+            }
+
+            // --- Flujo Gratuito (Existente) ---
             const generatedPassword = Math.random().toString(36).slice(-8);
             let isNewUser = false;
 
-            // Attempt to create the user account
             const { error: signUpError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: generatedPassword,
             });
 
-            // If there's no error, or the error says the user already exists, we can proceed
-            // Note: In Supabase, if confirming email is enabled, it might require extra steps, but we assume it's disabled or auto-confirmed in this context
             if (!signUpError) {
                 isNewUser = true;
             } else if (signUpError.message && !signUpError.message.toLowerCase().includes('already registered')) {
-                // If it's an error OTHER than "User already exists", we should probably stop
                 console.error("Auth Error:", signUpError);
-                // We don't throw here to allow them to still get the ticket even if auth fails, but warn in console.
             }
 
             const { data, error: rpcError } = await supabase.rpc('register_participant', {
@@ -134,7 +149,7 @@ export default function RafflePage() {
             } else {
                 setSuccess(result);
 
-                // Trigger email notification (don't block UI if it fails)
+                // Trigger email notification
                 supabase.functions.invoke('send-confirmation', {
                     body: {
                         name: formData.name,
@@ -266,6 +281,15 @@ export default function RafflePage() {
                                     </div>
                                 )}
 
+                                {raffle?.is_paid && (!raffle?.ticket_bundles || raffle.ticket_bundles.length === 0) && (
+                                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-6 text-emerald-400 flex justify-between items-center zoom-in animate-in">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm tracking-widest uppercase">Ticket Individual</span>
+                                            <span className="text-[10px] opacity-70">Costo de participación por Boleto</span>
+                                        </div>
+                                        <span className="text-xl font-mono font-bold">${raffle.ticket_price || '0.00'}</span>
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
@@ -337,7 +361,9 @@ export default function RafflePage() {
                                             <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                                         ) : (
                                             <span className="font-bold text-lg tracking-wide group-hover:text-white transition-colors flex items-center gap-2">
-                                                {raffle?.active ? 'PARTICIPAR AHORA' : 'RIFA FINALIZADA'} {raffle?.active && <ExternalLink size={18} />}
+                                                {raffle?.active
+                                                    ? (raffle.is_paid ? `PAGAR Y PARTICIPAR ($${(selectedBundle?.price || raffle.ticket_price || 0).toFixed(2)})` : 'PARTICIPAR AHORA')
+                                                    : 'RIFA FINALIZADA'} {raffle?.active && <ExternalLink size={18} />}
                                             </span>
                                         )}
                                     </div>

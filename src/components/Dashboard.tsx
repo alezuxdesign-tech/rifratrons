@@ -35,7 +35,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[] }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [] });
+    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0 });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -51,7 +51,9 @@ export default function Dashboard() {
         primary_color: '#3b82f6',
         logo_url: '',
         manychat_webhook_url: '',
-        terms_and_conditions: ''
+        terms_and_conditions: '',
+        mp_public_key: '',
+        mp_access_token: ''
     });
     const [savingSettings, setSavingSettings] = useState(false);
     const [settingsSuccess, setSettingsSuccess] = useState(false);
@@ -222,7 +224,7 @@ export default function Dashboard() {
             alert('Error al crear la rifa: ' + error.message);
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [] });
+            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0 });
             fetchData();
         }
         setCreating(false);
@@ -247,7 +249,9 @@ export default function Dashboard() {
                 active: editingRaffle.active,
                 total_numbers: editingRaffle.total_numbers,
                 reserved_numbers: reservedNumbersArray,
-                ticket_bundles: editingRaffle.ticket_bundles || []
+                ticket_bundles: editingRaffle.ticket_bundles || [],
+                is_paid: editingRaffle.is_paid || false,
+                ticket_price: editingRaffle.ticket_price || 0
             })
             .eq('id', editingRaffle.id);
 
@@ -1046,6 +1050,38 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
+                            {/* Pasarela de Pagos (MercadoPago) */}
+                            <div className="glass-panel p-8 border-emerald-500/20">
+                                <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4 text-emerald-400">
+                                    <DollarSign size={20} /> Pasarela de Pagos (MercadoPago)
+                                </h3>
+                                <p className="text-sm text-white/40 mb-6">Configura tus credenciales para poder vender tickets en Rifas de Pago.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-emerald-400/70 ml-1">Public Key</label>
+                                        <input
+                                            type="text"
+                                            value={settings.mp_public_key || ''}
+                                            onChange={(e) => setSettings({ ...settings, mp_public_key: e.target.value })}
+                                            placeholder="APP_USR-..."
+                                            className="premium-input w-full border-emerald-500/20 focus:border-emerald-500/50"
+                                        />
+                                        <p className="text-[10px] text-white/30 italic">Usada en el frontend para procesar pagos seguros.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-emerald-400/70 ml-1">Access Token</label>
+                                        <input
+                                            type="password"
+                                            value={settings.mp_access_token || ''}
+                                            onChange={(e) => setSettings({ ...settings, mp_access_token: e.target.value })}
+                                            placeholder="APP_USR-..."
+                                            className="premium-input w-full border-emerald-500/20 focus:border-emerald-500/50"
+                                        />
+                                        <p className="text-[10px] text-white/30 italic">Llave privada. Mantenla secreta. Se usa en el backend.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Textos y Legales */}
                             <div className="glass-panel p-8">
                                 <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
@@ -1193,6 +1229,40 @@ export default function Dashboard() {
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar. Ideal si no quieres que la rifa empiece desde el 0.</p>
                                 </div>
 
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={newRaffle.is_paid}
+                                                onChange={(e) => setNewRaffle({ ...newRaffle, is_paid: e.target.checked })}
+                                            />
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm text-white">Rifa de Pago</p>
+                                            <p className="text-[10px] text-white/40">Actívalo para cobrar por ticket</p>
+                                        </div>
+                                    </div>
+
+                                    {newRaffle.is_paid && (
+                                        <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio por Ticket ($)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                value={newRaffle.ticket_price || ''}
+                                                onChange={(e) => setNewRaffle({ ...newRaffle, ticket_price: parseFloat(e.target.value) })}
+                                                placeholder="Ej: 5.00"
+                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60"
+                                                required={newRaffle.is_paid}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
                                         <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Paquetes de Tickets (Opcional)</label>
@@ -1313,6 +1383,40 @@ export default function Dashboard() {
                                         className="premium-input w-full"
                                     />
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={editingRaffle.is_paid || false}
+                                                onChange={(e) => setEditingRaffle({ ...editingRaffle, is_paid: e.target.checked })}
+                                            />
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm text-white">Rifa de Pago</p>
+                                            <p className="text-[10px] text-white/40">Actívalo para cobrar por ticket</p>
+                                        </div>
+                                    </div>
+
+                                    {editingRaffle.is_paid && (
+                                        <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio por Ticket ($)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0.01"
+                                                value={editingRaffle.ticket_price || ''}
+                                                onChange={(e) => setEditingRaffle({ ...editingRaffle, ticket_price: parseFloat(e.target.value) })}
+                                                placeholder="Ej: 5.00"
+                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60"
+                                                required={editingRaffle.is_paid}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">
