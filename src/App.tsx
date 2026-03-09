@@ -16,7 +16,8 @@ function App() {
     });
 
     // 1.5 Fetch global appearance settings
-    supabase.from('platform_settings').select('*').limit(1).single().then(({ data }) => {
+    const loadSettings = async () => {
+      const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
       if (data && data.primary_color) {
         document.documentElement.style.setProperty('--color-primary', data.primary_color);
         const hex = data.primary_color.replace('#', '');
@@ -27,7 +28,16 @@ function App() {
           document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
         }
       }
-    });
+    };
+
+    loadSettings();
+
+    // 1.6 Listen for settings changes in real-time
+    const settingsSubscription = supabase.channel('public:platform_settings')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, () => {
+        loadSettings();
+      })
+      .subscribe();
 
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -44,7 +54,10 @@ function App() {
       setView('raffle');
     }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      supabase.removeChannel(settingsSubscription);
+    };
   }, []);
 
   if (view === 'portal') {

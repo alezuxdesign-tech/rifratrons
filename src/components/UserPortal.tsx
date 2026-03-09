@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Ticket, Mail, Lock, Search, AlertCircle, Loader2, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +10,27 @@ export default function UserPortal() {
     const [results, setResults] = useState<any[] | null>(null);
     const [error, setError] = useState('');
     const [raffle, setRaffle] = useState<any>(null);
+    const [platformSettings, setPlatformSettings] = useState<any>(null);
+
+    React.useEffect(() => {
+        fetchSettings();
+
+        // Escuchar cambios de configuración pública en tiempo real
+        const settingsSubscription = supabase.channel('public:platform_settings_portal')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, () => {
+                fetchSettings();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(settingsSubscription);
+        };
+    }, []);
+
+    async function fetchSettings() {
+        const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
+        if (data) setPlatformSettings(data);
+    }
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -63,8 +84,17 @@ export default function UserPortal() {
                     className="text-center mb-12"
                 >
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold tracking-wider mb-6 uppercase">
-                        <Trophy size={16} fill="currentColor" /> Portal de Participantes
+                        <Trophy size={16} fill="currentColor" /> Portal de Participantes {platformSettings?.platform_name ? `- ${platformSettings.platform_name}` : ''}
                     </div>
+                    {platformSettings?.logo_url && (
+                        <div className="flex justify-center mb-6">
+                            <img
+                                src={platformSettings.logo_url}
+                                alt="Logo"
+                                className="h-12 md:h-16 w-auto object-contain drop-shadow-2xl"
+                            />
+                        </div>
+                    )}
                     <h1 className="text-4xl md:text-5xl font-display font-black mb-4 text-gradient">Consulta tus Tickets</h1>
                     <p className="text-white/40 max-w-lg mx-auto">Ingresa tus credenciales para ver tus números asignados y el estado del sorteo.</p>
                 </motion.div>

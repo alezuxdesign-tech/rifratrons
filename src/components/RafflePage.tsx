@@ -27,6 +27,17 @@ export default function RafflePage() {
 
         fetchInitialRaffle(raffleParam);
         fetchSettings();
+
+        // Escuchar cambios de configuración pública en tiempo real
+        const settingsSubscription = supabase.channel('public:platform_settings_raffle')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_settings' }, () => {
+                fetchSettings();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(settingsSubscription);
+        };
     }, []);
 
     async function fetchSettings() {
