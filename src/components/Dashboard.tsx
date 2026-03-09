@@ -157,25 +157,38 @@ export default function Dashboard() {
     }
 
     async function fetchData() {
-        // Fetch raffles joined with statistics view for correct ticket sum
-        const { data: rafflesData } = await supabase
+        setLoading(true);
+
+        // 1. Fetch Raffles
+        const { data: rafflesData, error: rafflesError } = await supabase
             .from('raffles')
-            .select('*, stats:raffle_stats(total_tickets_sold)')
+            .select('*')
             .order('created_at', { ascending: false });
 
-        // Total registered participants (records)
+        if (rafflesError) console.error("Error fetching raffles:", rafflesError);
+
+        // 2. Fetch Stats per Raffle
+        const { data: statsData, error: statsError } = await supabase
+            .from('raffle_stats')
+            .select('*');
+
+        if (statsError) console.error("Error fetching stats:", statsError);
+
+        // 3. Fetch Total Participants (Records)
         const { count: participantsCount } = await supabase.from('participants').select('*', { count: 'exact', head: true });
 
-        // Total global tickets sold
-        const { data: globalStats } = await supabase.from('raffle_stats').select('total_tickets_sold');
-        const totalTicketsGlobal = globalStats?.reduce((acc, curr) => acc + (curr.total_tickets_sold || 0), 0) || 0;
-
         if (rafflesData) {
-            const rafflesWithCounts = rafflesData.map(r => ({
-                ...r,
-                // Use the summed tickets from the view instead of record count
-                participants_count: r.stats?.[0]?.total_tickets_sold || 0
-            }));
+            // Merge stats with raffles
+            const rafflesWithCounts = rafflesData.map(r => {
+                const s = statsData?.find(sd => sd.raffle_id === r.id);
+                return {
+                    ...r,
+                    participants_count: s?.total_tickets_sold || 0
+                };
+            });
+
+            // Calculate global total
+            const totalTicketsGlobal = statsData?.reduce((acc, curr) => acc + (curr.total_tickets_sold || 0), 0) || 0;
 
             setRaffles(rafflesWithCounts);
             setStats({
@@ -183,7 +196,6 @@ export default function Dashboard() {
                 totalTickets: totalTicketsGlobal,
                 activeRaffles: rafflesData.filter(r => r.active).length
             });
-            // Update the Tickets stat card in the UI if needed, but the raffles list will use participants_count
         }
         setLoading(false);
     }
