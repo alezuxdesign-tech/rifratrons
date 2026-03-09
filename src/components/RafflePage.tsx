@@ -340,11 +340,11 @@ export default function RafflePage() {
 
                                     <div className="relative overflow-hidden group mb-10">
                                         <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50"></div>
-                                        <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2.5rem] p-8 sm:p-12 relative z-10">
+                                        <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2.5rem] p-4 sm:p-12 relative z-10">
                                             {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4">
                                                     {success.assigned_numbers.map((num: any) => (
-                                                        <span key={num} className="text-3xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
+                                                        <span key={num} className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-black text-gradient tracking-tighter tabular-nums px-2 py-2 sm:px-5 sm:py-3 border border-primary/20 rounded-xl sm:rounded-2xl bg-black/40 shadow-lg flex items-center justify-center text-center">
                                                             #{num.toString().padStart(6, '0')}
                                                         </span>
                                                     ))}
