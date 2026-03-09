@@ -176,7 +176,8 @@ export default function RafflePage() {
                         email: formData.email,
                         assigned_numbers: result.assigned_numbers,
                         raffle_name: raffle.name,
-                        password: isNewUser ? generatedPassword : null
+                        password: isNewUser ? generatedPassword : null,
+                        primary_color: platformSettings?.primary_color
                     }
                 }).catch(err => console.error('Error triggering email confirmation:', err));
             }

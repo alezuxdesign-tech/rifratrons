@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function UserPortal() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [cedula, setCedula] = useState('');
     const [results, setResults] = useState<any[] | null>(null);
     const [error, setError] = useState('');
     const [raffle, setRaffle] = useState<any>(null);
@@ -39,34 +39,32 @@ export default function UserPortal() {
         setResults(null);
         setRaffle(null);
 
+        if (!email || !cedula) {
+            setError('Por favor ingresa tu correo y cédula.');
+            setLoading(false);
+            return;
+        }
+
         try {
-            // 1. Sign in with Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-                email: email.trim(),
-                password: password.trim(),
+            // Use RPC for secure lookup by email + cedula
+            const { data: participants, error: rpcError } = await supabase.rpc('get_participant_tickets', {
+                p_email: email.trim(),
+                p_cedula: cedula.trim()
             });
 
-            if (authError) {
-                setError('Credenciales incorrectas. ' + authError.message);
-                setLoading(false);
-                return;
-            }
-
-            // 2. Fetch participant entries using the authenticated email
-            const { data: participants, error: pError } = await supabase
-                .from('participants')
-                .select('*, raffles(*)')
-                .eq('email', authData.user.email);
-
-            if (pError) throw pError;
+            if (rpcError) throw rpcError;
 
             if (!participants || participants.length === 0) {
-                setError('No se encontraron tickets con esos datos. Verifica tu email y código.');
+                setError('No se encontraron registros con esos datos. Verifica tu correo y cédula.');
                 return;
             }
 
             setResults(participants);
-            setRaffle(participants[0].raffles);
+            setRaffle({
+                name: participants[0].raffle_name,
+                winning_number: participants[1]?.winning_number || participants[0].winning_number,
+                active: participants[0].raffle_active
+            });
         } catch (err: any) {
             console.error('Portal error:', err);
             setError('Error al consultar: ' + err.message);
@@ -122,17 +120,17 @@ export default function UserPortal() {
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Contraseña</label>
+                            <div>
+                                <label className="block text-sm font-bold text-white/60 mb-2 ml-1">Cédula</label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-4 top-4 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
                                     <input
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="Ingresa tu contraseña"
-                                        className="premium-input pl-12 w-full"
+                                        type="text"
                                         required
+                                        value={cedula}
+                                        onChange={(e) => setCedula(e.target.value)}
+                                        className="premium-input w-full pl-12"
+                                        placeholder="Tu número de identificación"
                                     />
                                 </div>
                             </div>
