@@ -257,7 +257,7 @@ export default function RafflePage() {
                         >
                             <div className="mb-10">
                                 <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
-                                <p className="text-white/40">Ingresa tus datos para reclamar tu ticket gratuito.</p>
+                                <p className="text-white/40">{raffle?.is_paid ? 'Ingresa tus datos para continuar con el pago de tus tickets.' : 'Ingresa tus datos para reclamar tu ticket gratuito.'}</p>
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-6">
@@ -299,21 +299,23 @@ export default function RafflePage() {
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
-                                    <div className="relative group">
-                                        <Ticket className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                        <input
-                                            type="text"
-                                            value={code}
-                                            onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                            placeholder="ABC-XYZ-123"
-                                            className="premium-input pl-14 w-full"
-                                            required
-                                            disabled={submitting}
-                                        />
+                                {!raffle?.is_paid && (
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
+                                        <div className="relative group">
+                                            <Ticket className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
+                                            <input
+                                                type="text"
+                                                value={code}
+                                                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                                placeholder="ABC-XYZ-123"
+                                                className="premium-input pl-14 w-full"
+                                                required
+                                                disabled={submitting}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Nombre Completo</label>
