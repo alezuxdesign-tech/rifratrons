@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { supabase } from '../lib/supabase';
-import { Ticket, User, Mail, Send, AlertCircle, CheckCircle, ExternalLink, Search, Phone, CreditCard } from 'lucide-react';
+import { Ticket, User, Mail, Send, AlertCircle, CheckCircle, ExternalLink, Search, Phone, CreditCard, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function RafflePage() {
@@ -12,6 +12,7 @@ export default function RafflePage() {
     const [success, setSuccess] = useState<any>(null);
     const [selectedBundle, setSelectedBundle] = useState<any>(null);
     const [platformSettings, setPlatformSettings] = useState<any>(null);
+    const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
     const formatCOP = (amount: number) => {
         return new Intl.NumberFormat('es-CO', {
@@ -260,9 +261,28 @@ export default function RafflePage() {
                 <div className="grid sm:grid-cols-2 gap-6 mb-12">
                     <FeatureItem icon={<CheckCircle className="text-emerald-500" />} title="Transparencia" desc="Algoritmo de asignación verificable" />
                     <FeatureItem icon={<Send className="text-amber-500" />} title="Instantáneo" desc="Recibe tu número al momento" />
-                    <FeatureItem icon={<Ticket className="text-primary" />} title="100.000 Tickets" desc="Amplias posibilidades de ganar" />
+                    <FeatureItem icon={<Ticket className="text-primary" />} title="Seguro" desc="Plataforma encriptada y confiable" />
                     <FeatureItem icon={<User className="text-indigo-400" />} title="Soporte VIP" desc="Atención personalizada 24/7" />
                 </div>
+
+                {raffle.image_url && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl aspect-[16/9] group"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10"></div>
+                        <img
+                            src={raffle.image_url}
+                            alt="Portada de la rifa"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute bottom-6 left-6 z-20">
+                            <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full mb-2 inline-block shadow-lg">En curso</span>
+                            <h3 className="text-2xl font-display font-black text-white drop-shadow-md">Portada de la Rifa</h3>
+                        </div>
+                    </motion.div>
+                )}
             </motion.div>
 
             {/* Right Side: Registration Card */}
@@ -277,214 +297,12 @@ export default function RafflePage() {
                 <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-[100px] -z-10"></div>
 
                 <AnimatePresence mode="wait">
-                    {!success ? (
-                        <motion.div
-                            key="form"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
-                        >
-                            <div className="mb-10">
-                                <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
-                                <p className="text-white/40">{raffle?.is_paid ? 'Ingresa tus datos para continuar con el pago de tus tickets.' : 'Ingresa tus datos para reclamar tu ticket gratuito.'}</p>
-                            </div>
-
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {raffle?.ticket_bundles && raffle.ticket_bundles.length > 0 && (
-                                    <div className="space-y-3 mb-8">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1 block">Selecciona tu Paquete</label>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {raffle.ticket_bundles.map((bundle: any) => (
-                                                <button
-                                                    key={bundle.id}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setSelectedBundle(bundle);
-                                                        setError('');
-                                                    }}
-                                                    className={`p-4 rounded-xl border text-left cursor-pointer transition-all ${selectedBundle?.id === bundle.id
-                                                        ? 'bg-primary/20 border-primary shadow-[0_0_15px_rgba(37,99,235,0.3)]'
-                                                        : 'bg-white/5 border-white/10 hover:border-white/30'
-                                                        }`}
-                                                >
-                                                    <div className="font-bold text-lg mb-1">{bundle.name}</div>
-                                                    <div className="flex justify-between items-end">
-                                                        <span className="text-sm text-white/60">{bundle.tickets} Tickets</span>
-                                                        <span className="font-mono text-primary font-bold">{formatCOP(bundle.price)}</span>
-                                                    </div>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {raffle?.is_paid && (!raffle?.ticket_bundles || raffle.ticket_bundles.length === 0) && (
-                                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-6 text-emerald-400 flex justify-between items-center zoom-in animate-in">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-sm tracking-widest uppercase">Ticket Individual</span>
-                                            <span className="text-[10px] opacity-70">Costo de participación por Boleto</span>
-                                        </div>
-                                        <span className="text-xl font-mono font-bold">{formatCOP(raffle.ticket_price || 0)}</span>
-                                    </div>
-                                )}
-
-                                {!raffle?.is_paid && (
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
-                                        <div className="relative group">
-                                            <Ticket className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                            <input
-                                                type="text"
-                                                value={code}
-                                                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                                placeholder="ABC-XYZ-123"
-                                                className="premium-input pl-14 w-full"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Nombre(s)</label>
-                                        <div className="relative group">
-                                            <User className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                            <input
-                                                type="text"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                placeholder="Ej: Alejandro"
-                                                className="premium-input pl-14 w-full"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Apellido(s)</label>
-                                        <div className="relative group">
-                                            <User className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                            <input
-                                                type="text"
-                                                value={formData.last_name}
-                                                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                                placeholder="Ej: Suárez"
-                                                className="premium-input pl-14 w-full"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Correo Electrónico</label>
-                                    <div className="relative group">
-                                        <Mail className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            placeholder="hola@rifatrons.com"
-                                            className="premium-input pl-14 w-full"
-                                            required
-                                            disabled={submitting}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
-                                        <div className="relative group">
-                                            <Phone className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                            <input
-                                                type="tel"
-                                                value={formData.whatsapp}
-                                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                                                placeholder="+57 300..."
-                                                className="premium-input pl-14 w-full"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
-                                        <div className="relative group">
-                                            <CreditCard className="absolute left-5 top-5 text-white/20 group-focus-within:text-primary transition-colors" size={20} />
-                                            <input
-                                                type="text"
-                                                value={formData.cedula}
-                                                onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
-                                                placeholder="Documento Identidad"
-                                                className="premium-input pl-14 w-full"
-                                                required
-                                                disabled={submitting}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {error && (
-                                    <motion.div
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl flex items-center gap-3 text-sm"
-                                    >
-                                        <AlertCircle size={20} />
-                                        <span className="font-medium">{error}</span>
-                                    </motion.div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={submitting || !raffle?.active}
-                                    className={`w-full relative group overflow-hidden rounded-2xl p-[2px] mt-2 ${(!raffle?.active) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                >
-                                    {raffle?.active && <div className="absolute inset-0 bg-gradient-to-r from-primary via-indigo-500 to-primary opacity-70 group-hover:opacity-100 transition-opacity duration-500 bg-[length:200%_auto] animate-gradient"></div>}
-                                    <div className={`relative px-8 py-5 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 ${raffle?.active ? 'bg-[#0f0f12] group-hover:bg-opacity-0' : 'bg-white/10'}`}>
-                                        {submitting ? (
-                                            <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                                        ) : (
-                                            <span className="font-bold text-lg tracking-wide group-hover:text-white transition-colors flex items-center gap-2">
-                                                {raffle?.active
-                                                    ? (raffle.is_paid ? `PAGAR Y PARTICIPAR (${formatCOP(selectedBundle?.price || raffle.ticket_price || 0)})` : 'PARTICIPAR AHORA')
-                                                    : 'RIFA FINALIZADA'} {raffle?.active && <ExternalLink size={18} />}
-                                            </span>
-                                        )}
-                                    </div>
-                                </button>
-
-                                {platformSettings?.terms_and_conditions && (
-                                    <p className="text-center text-[10px] text-white/40 mt-6 leading-relaxed max-w-sm mx-auto">
-                                        Al participar, confirmas haber leído y estar de acuerdo con nuestros{' '}
-                                        <a href="#" className="underline hover:text-white transition-colors font-bold" title={platformSettings.terms_and_conditions}>términos y condiciones</a>.
-                                    </p>
-                                )}
-                            </form>
-
-                            <div className="mt-8 pt-8 border-t border-white/5 text-center">
-                                <p className="text-white/20 text-xs mb-4 uppercase tracking-[0.2em] font-bold">¿Ya tienes tickets?</p>
-                                <a
-                                    href="/mis-tickets"
-                                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-primary hover:border-primary/30 transition-all text-sm font-bold group"
-                                >
-                                    <Search size={16} className="group-hover:scale-110 transition-transform" />
-                                    CONSULTAR MIS TICKETS
-                                </a>
-                            </div>
-                        </motion.div>
-                    ) : (
+                    {success ? (
                         <motion.div
                             key="success"
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
                             className="glass-panel p-8 md:p-12 text-center border-emerald-500/20"
                         >
                             <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/10 text-emerald-500 mb-8 border border-emerald-500/20">
@@ -496,9 +314,9 @@ export default function RafflePage() {
                             <div className="relative overflow-hidden group">
                                 <div className="absolute inset-0 bg-primary/20 blur-[50px] opacity-50 group-hover:opacity-100 transition-opacity"></div>
                                 <div className="bg-[#0f0f12] border-2 border-primary/30 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 relative z-10 transition-transform group-hover:scale-[1.02] duration-500">
-                                    {(success.assigned_numbers && success.assigned_numbers.length > 1) ? (
+                                    {(success.assigned_numbers && success.assigned_numbers.length > 0) ? (
                                         <div className="flex flex-wrap items-center justify-center gap-4 max-h-[40vh] overflow-y-auto">
-                                            {success.assigned_numbers.map((num: number) => (
+                                            {success.assigned_numbers.map((num: any) => (
                                                 <span key={num} className="text-3xl sm:text-4xl font-black text-gradient tracking-tighter tabular-nums px-5 py-3 border border-primary/20 rounded-2xl bg-black/40 shadow-lg">
                                                     #{num.toString().padStart(6, '0')}
                                                 </span>
@@ -512,10 +330,211 @@ export default function RafflePage() {
                                 </div>
                             </div>
 
-                            <p className="mt-10 text-white/30 text-sm leading-relaxed">
-                                Hemos enviado los detalles a tu email.<br />
-                                ¡Sigue nuestras redes para el sorteo en vivo!
-                            </p>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="glow-button w-full py-5 mt-10 flex items-center justify-center gap-2 text-lg font-bold"
+                            >
+                                Volver al Inicio
+                            </button>
+                        </motion.div>
+                    ) : (raffle?.is_paid && !showRegistrationForm) ? (
+                        <motion.div
+                            key="bundles"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                        >
+                            <div className="mb-10 text-center">
+                                <h2 className="text-3xl font-display font-bold mb-2 text-gradient">Elige tu Paquete</h2>
+                                <p className="text-white/40 text-sm">Selecciona cuántos tickets deseas para participar.</p>
+                            </div>
+
+                            <div className="space-y-4 mb-10">
+                                {raffle.ticket_bundles && raffle.ticket_bundles.length > 0 ? (
+                                    raffle.ticket_bundles.map((bundle: any) => (
+                                        <button
+                                            key={bundle.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedBundle(bundle);
+                                                setError('');
+                                            }}
+                                            className={`w-full p-6 rounded-2xl border text-left flex items-center justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
+                                                ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]'
+                                                : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.08]'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${selectedBundle?.id === bundle.id ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
+                                                    <Ticket size={24} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-black text-lg tracking-tight">{bundle.name}</div>
+                                                    <div className="text-sm text-white/40">{bundle.tickets} Tickets</div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-2xl font-mono font-black text-white">{formatCOP(bundle.price)}</div>
+                                            </div>
+                                        </button>
+                                    ))
+                                ) : (
+                                    <div className="p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
+                                        <p className="text-white/40">No hay paquetes configurados.</p>
+                                    </div>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    if (!selectedBundle && raffle.is_paid) {
+                                        setError('Selecciona un paquete para participar.');
+                                        return;
+                                    }
+                                    setShowRegistrationForm(true);
+                                }}
+                                className="glow-button w-full py-5 flex items-center justify-center gap-3 text-lg font-black"
+                            >
+                                Participar Ahora <Send size={20} />
+                            </button>
+
+                            {error && (
+                                <p className="mt-4 text-center text-red-400 text-sm font-bold">{error}</p>
+                            )}
+
+                            <div className="mt-8 pt-6 border-t border-white/5 text-center">
+                                <a href="/mis-tickets" className="text-white/20 hover:text-primary transition-colors text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2">
+                                    <Search size={14} /> Consultar mis tickets
+                                </a>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="registration"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="glass-panel p-6 sm:p-8 md:p-12 relative overflow-hidden"
+                        >
+                            <div className="mb-8 relative">
+                                {raffle.is_paid && (
+                                    <button
+                                        onClick={() => setShowRegistrationForm(false)}
+                                        className="mb-4 text-white/40 hover:text-white text-xs font-bold flex items-center gap-2 transition-colors group"
+                                    >
+                                        <X size={14} /> Volver a paquetes
+                                    </button>
+                                )}
+                                <h2 className="text-3xl font-display font-bold mb-2">Registro de Entrada</h2>
+                                <p className="text-white/40 text-sm">Completa tus datos para {(raffle.is_paid) ? `comprar ${selectedBundle?.name}` : 'obtener tu ticket gratis'}.</p>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                {!raffle.is_paid && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
+                                        <div className="relative group">
+                                            <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                            <input
+                                                type="text"
+                                                value={code}
+                                                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                                placeholder="ABC-XYZ"
+                                                className="premium-input pl-12 w-full py-3"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Nombre</label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="premium-input w-full py-3"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Apellido</label>
+                                        <input
+                                            type="text"
+                                            value={formData.last_name}
+                                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                            className="premium-input w-full py-3"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Correo Electrónico</label>
+                                    <div className="relative group">
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            placeholder="email@ejemplo.com"
+                                            className="premium-input pl-12 w-full py-3"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
+                                        <div className="relative group">
+                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                            <input
+                                                type="tel"
+                                                value={formData.whatsapp}
+                                                onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                                placeholder="+57..."
+                                                className="premium-input pl-12 w-full py-3"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
+                                        <div className="relative group">
+                                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                            <input
+                                                type="text"
+                                                value={formData.cedula}
+                                                onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                                                placeholder="Documento"
+                                                className="premium-input pl-12 w-full py-3 font-mono"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {error && (
+                                    <p className="text-xs text-red-500 font-bold bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="glow-button w-full py-4 flex items-center justify-center gap-3 text-lg font-black mt-4"
+                                >
+                                    {submitting ? (
+                                        <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                                    ) : (
+                                        <>
+                                            {raffle.is_paid ? `Pagar ${formatCOP(selectedBundle?.price || 0)}` : 'Obtener Ticket Gratis'} <Send size={18} />
+                                        </>
+                                    )}
+                                </button>
+                            </form>
                         </motion.div>
                     )}
                 </AnimatePresence>

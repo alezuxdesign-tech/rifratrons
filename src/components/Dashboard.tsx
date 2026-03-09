@@ -14,19 +14,36 @@ import {
     ExternalLink,
     X,
     Sparkles,
+    Trash2,
+    Edit2,
+    Copy,
+    ChevronRight,
+    Search,
+    Download,
+    Eye,
+    LayoutDashboard,
+    Image as ImageIcon,
+    Mail,
+    Phone,
+    CreditCard,
+    Briefcase,
+    Menu,
+    Bell,
+    Palette,
+    Home,
+    Share2,
+    Filter,
+    Save,
+    Wand2,
     Zap,
     Trophy,
-    Menu,
     Package,
     DollarSign,
     Crown,
     Star,
-    Palette,
     Link as LinkIcon,
     FileText,
-    Save,
-    Upload,
-    Search
+    Upload
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandedModal from './BrandedModal';
@@ -37,7 +54,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0 });
+    const [newRaffle, setNewRaffle] = useState<{ name: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number, image_url: string }>({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -137,6 +154,33 @@ export default function Dashboard() {
             setTimeout(() => setSettingsError(''), 4000);
         } finally {
             setUploadingLogo(false);
+        }
+    }
+
+    async function handleRaffleImageUpload(e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean = false) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `raffle-${Date.now()}.${fileExt}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from('raffle-images')
+                .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) throw uploadError;
+
+            const { data } = supabase.storage.from('raffle-images').getPublicUrl(fileName);
+
+            if (isEdit) {
+                setEditingRaffle({ ...editingRaffle, image_url: data.publicUrl });
+            } else {
+                setNewRaffle({ ...newRaffle, image_url: data.publicUrl });
+            }
+        } catch (err: any) {
+            console.error('Raffle image upload error:', err);
+            showAlert('Error', 'Error al subir la portada: ' + err.message, 'error');
         }
     }
 
@@ -289,7 +333,7 @@ export default function Dashboard() {
             showAlert('Error', 'No se pudo crear la rifa: ' + error.message, 'error');
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0 });
+            setNewRaffle({ name: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
             fetchData();
         }
         setCreating(false);
@@ -316,7 +360,8 @@ export default function Dashboard() {
                 reserved_numbers: reservedNumbersArray,
                 ticket_bundles: editingRaffle.ticket_bundles || [],
                 is_paid: editingRaffle.is_paid || false,
-                ticket_price: editingRaffle.ticket_price || 0
+                ticket_price: editingRaffle.ticket_price || 0,
+                image_url: editingRaffle.image_url || ''
             })
             .eq('id', editingRaffle.id);
 
@@ -822,13 +867,18 @@ export default function Dashboard() {
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
                                             {participants.filter(p => {
+                                                const cleanSearchTerm = searchTerm.replace('#', '').trim();
                                                 const searchMatch = !searchTerm ||
                                                     p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     p.last_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     p.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                     p.cedula?.includes(searchTerm) ||
                                                     p.whatsapp?.includes(searchTerm) ||
-                                                    (p.assigned_numbers && p.assigned_numbers.some((num: number) => num.toString().includes(searchTerm)));
+                                                    (p.assigned_numbers && p.assigned_numbers.some((num: number) => {
+                                                        const numStr = num.toString();
+                                                        const padded = numStr.padStart(6, '0');
+                                                        return numStr.includes(cleanSearchTerm) || padded.includes(cleanSearchTerm);
+                                                    }));
 
                                                 const bundleMatch = !filterBundle || p.bundle_name === filterBundle;
 
@@ -1412,6 +1462,40 @@ export default function Dashboard() {
                                         </div>
                                     </label>
 
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Imagen de Portada (Opcional)</label>
+                                        <div className="relative group">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={(e) => handleRaffleImageUpload(e)}
+                                                className="hidden"
+                                                id="new-raffle-image-upload"
+                                            />
+                                            <label
+                                                htmlFor="new-raffle-image-upload"
+                                                className="premium-input w-full flex items-center justify-center gap-3 cursor-pointer hover:border-primary/50 transition-all py-3"
+                                            >
+                                                <ImageIcon size={20} className="text-primary" />
+                                                <span className="text-sm truncate max-w-[200px]">
+                                                    {newRaffle.image_url ? 'Imagen Seleccionada ✓' : 'Subir Portada'}
+                                                </span>
+                                            </label>
+                                            {newRaffle.image_url && (
+                                                <div className="mt-4 relative rounded-xl overflow-hidden aspect-video border border-white/10">
+                                                    <img src={newRaffle.image_url} alt="Portada preview" className="w-full h-full object-cover" />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setNewRaffle({ ...newRaffle, image_url: '' })}
+                                                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     {newRaffle.is_paid && (
                                         <div className="space-y-2 animate-in fade-in zoom-in duration-300">
                                             <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
@@ -1603,6 +1687,40 @@ export default function Dashboard() {
                                             />
                                         </div>
                                     )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Imagen de Portada (Opcional)</label>
+                                    <div className="relative group">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => handleRaffleImageUpload(e, true)}
+                                            className="hidden"
+                                            id="edit-raffle-image-upload"
+                                        />
+                                        <label
+                                            htmlFor="edit-raffle-image-upload"
+                                            className="premium-input w-full flex items-center justify-center gap-3 cursor-pointer hover:border-primary/50 transition-all py-3"
+                                        >
+                                            <ImageIcon size={20} className="text-primary" />
+                                            <span className="text-sm truncate max-w-[200px]">
+                                                {editingRaffle.image_url ? 'Cambiar Portada ✓' : 'Subir Portada'}
+                                            </span>
+                                        </label>
+                                        {editingRaffle.image_url && (
+                                            <div className="mt-4 relative rounded-xl overflow-hidden aspect-video border border-white/10">
+                                                <img src={editingRaffle.image_url} alt="Portada preview" className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingRaffle({ ...editingRaffle, image_url: '' })}
+                                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full shadow-lg"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
