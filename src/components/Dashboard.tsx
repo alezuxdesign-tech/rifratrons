@@ -326,10 +326,16 @@ export default function Dashboard() {
             {/* Mobile Header (Visible only on small screens) */}
             <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-white/5 z-40 flex items-center justify-between px-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <Activity className="text-white" size={16} />
-                    </div>
-                    <h1 className="font-display font-black tracking-tight text-xl text-gradient">RIFATRONS</h1>
+                    {settings?.logo_url ? (
+                        <img src={settings.logo_url} alt="Logo" className="h-10 w-auto object-contain" />
+                    ) : (
+                        <>
+                            <div className="w-8 h-8 bg-gradient-to-br from-primary to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                                <Activity className="text-white" size={16} />
+                            </div>
+                            <h1 className="font-display font-black tracking-tight text-xl text-gradient">{settings?.platform_name || 'RIFATRONS'}</h1>
+                        </>
+                    )}
                 </div>
                 <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -342,13 +348,21 @@ export default function Dashboard() {
             {/* Sidebar - Premium Design */}
             <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-72 border-r border-white/5 bg-[#0d0d0f]/95 lg:bg-[#0d0d0f]/80 backdrop-blur-xl p-8 flex flex-col items-center transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
                 <div className="hidden lg:flex items-center gap-4 mb-16 w-full">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <Activity className="text-white" size={24} />
-                    </div>
-                    <div>
-                        <h1 className="font-display font-black tracking-tight text-2xl text-gradient">RIFATRONS</h1>
-                        <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Architecture</p>
-                    </div>
+                    {settings?.logo_url ? (
+                        <div className="w-full h-16 flex items-center justify-center">
+                            <img src={settings.logo_url} alt="Logo" className="max-h-full max-w-full object-contain drop-shadow-lg" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="w-12 h-12 bg-gradient-to-br from-primary to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+                                <Activity className="text-white" size={24} />
+                            </div>
+                            <div>
+                                <h1 className="font-display font-black tracking-tight text-xl text-gradient truncate">{settings?.platform_name || 'RIFATRONS'}</h1>
+                                <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Panel de Control</p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <nav className="space-y-3 w-full flex-1 pt-8 lg:pt-0">

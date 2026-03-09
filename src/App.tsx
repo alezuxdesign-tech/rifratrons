@@ -18,14 +18,32 @@ function App() {
     // 1.5 Fetch global appearance settings
     const loadSettings = async () => {
       const { data } = await supabase.from('platform_settings').select('*').limit(1).single();
-      if (data && data.primary_color) {
-        document.documentElement.style.setProperty('--color-primary', data.primary_color);
-        const hex = data.primary_color.replace('#', '');
-        if (hex.length === 6) {
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
+      if (data) {
+        if (data.primary_color) {
+          document.documentElement.style.setProperty('--color-primary', data.primary_color);
+          const hex = data.primary_color.replace('#', '');
+          if (hex.length === 6) {
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            document.documentElement.style.setProperty('--color-primary-glow', `rgba(${r}, ${g}, ${b}, 0.5)`);
+          }
+        }
+
+        // Update Document Title
+        if (data.platform_name) {
+          document.title = `${data.platform_name} | Sorteos`;
+        }
+
+        // Update Favicon dynamically
+        if (data.logo_url) {
+          let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.head.appendChild(link);
+          }
+          link.href = data.logo_url;
         }
       }
     };
