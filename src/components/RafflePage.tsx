@@ -481,43 +481,42 @@ export default function RafflePage() {
 
                                     <form onSubmit={handleSubmit} className="space-y-5">
                                         {!raffle.is_paid && (
-                                            <div className="space-y-1.5">
+                                            <div className="space-y-1.5 opacity-60">
                                                 <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Código Promocional</label>
                                                 <div className="relative group">
-                                                    <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                    <Ticket className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
                                                     <input
                                                         type="text"
                                                         value={code}
-                                                        onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                                        readOnly
                                                         placeholder="ABC-XYZ"
-                                                        className="premium-input pl-12 w-full py-3"
+                                                        className="premium-input pl-12 w-full py-3 cursor-not-allowed"
                                                         required
                                                     />
                                                 </div>
                                             </div>
                                         )}
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Nombre</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.name}
-                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                    className="premium-input w-full py-3"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Apellido</label>
-                                                <input
-                                                    type="text"
-                                                    value={formData.last_name}
-                                                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                                                    className="premium-input w-full py-3"
-                                                    required
-                                                />
-                                            </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Nombre</label>
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                className="premium-input w-full py-3"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Apellido</label>
+                                            <input
+                                                type="text"
+                                                value={formData.last_name}
+                                                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                                                className="premium-input w-full py-3"
+                                                required
+                                            />
                                         </div>
 
                                         <div className="space-y-1.5">
@@ -535,34 +534,33 @@ export default function RafflePage() {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
-                                                <div className="relative group">
-                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                                    <input
-                                                        type="tel"
-                                                        value={formData.whatsapp}
-                                                        onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                                                        placeholder="+57..."
-                                                        className="premium-input pl-12 w-full py-3"
-                                                        required
-                                                    />
-                                                </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">WhatsApp</label>
+                                            <div className="relative group">
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                <input
+                                                    type="tel"
+                                                    value={formData.whatsapp}
+                                                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                                                    placeholder="+57..."
+                                                    className="premium-input pl-12 w-full py-3"
+                                                    required
+                                                />
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
-                                                <div className="relative group">
-                                                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
-                                                    <input
-                                                        type="text"
-                                                        value={formData.cedula}
-                                                        onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
-                                                        placeholder="Documento"
-                                                        className="premium-input pl-12 w-full py-3 font-mono"
-                                                        required
-                                                    />
-                                                </div>
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cédula / ID</label>
+                                            <div className="relative group">
+                                                <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-primary transition-colors" size={18} />
+                                                <input
+                                                    type="number"
+                                                    value={formData.cedula}
+                                                    onChange={(e) => setFormData({ ...formData, cedula: e.target.value })}
+                                                    placeholder="Documento"
+                                                    className="premium-input pl-12 w-full py-3 font-mono"
+                                                    required
+                                                />
                                             </div>
                                         </div>
 
