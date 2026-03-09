@@ -10,6 +10,7 @@ function App() {
   const [view, setView] = useState<'raffle' | 'admin' | 'portal'>('raffle');
 
   useEffect(() => {
+    console.log('--- ANTIGRAVITY DEV MODE RELOADED ---');
     // 1. Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
