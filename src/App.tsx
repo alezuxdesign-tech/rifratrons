@@ -1,18 +1,79 @@
 import { useState, useEffect } from 'react';
 import RafflePage from './components/RafflePage';
 import Login from './components/Login';
-import Dashboard from './components/Dashboard';
+import Dashboard, { type UserProfile } from './components/Dashboard';
 import UserPortal from './components/UserPortal';
 import { supabase } from './lib/supabase';
 
 function App() {
   const [session, setSession] = useState<any>(null);
+  const [adminProfile, setAdminProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'raffle' | 'admin' | 'portal'>('raffle');
+
+  const checkAdmin = async (currentSession: any) => {
+    if (!currentSession) {
+      setAdminProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: profile } = await supabase
+        .from('admin_profiles')
+        .select('*')
+        .eq('id', currentSession.user.id)
+        .single();
+
+      if (profile) {
+        setAdminProfile(profile);
+      } else {
+        // Bootstrap: Auto-promote the main owner if they log in
+        if (currentSession.user.email === 'alejandrosuarezux@gmail.com') {
+          const initialProfile: UserProfile = {
+            id: currentSession.user.id,
+            email: currentSession.user.email,
+            role: 'superadmin',
+            permissions: { raffles: true, participants: true, analytics: true, settings: true, admins: true }
+          };
+          
+          const { error: insertError } = await supabase
+            .from('admin_profiles')
+            .insert([initialProfile])
+            .select()
+            .single();
+            
+          if (!insertError) {
+            setAdminProfile(initialProfile);
+          } else {
+            console.error("Error bootstrapping initial admin:", insertError);
+          }
+        } else {
+          // NOT AUTHORIZED - Force Logout
+          console.warn("Unauthorized admin access attempt:", currentSession.user.email);
+          await supabase.auth.signOut();
+          setAdminProfile(null);
+          setSession(null);
+          // Show alert after logout to ensure they are on the login screen
+          setTimeout(() => alert("Acceso denegado: Tu cuenta no tiene permisos de administrador."), 500);
+        }
+      }
+    } catch (err) {
+      console.error("Auth check error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // 1. Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        checkAdmin(session);
+      } else {
+        setLoading(false);
+      }
     });
 
     // 1.5 Fetch global appearance settings
@@ -74,6 +135,12 @@ function App() {
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        checkAdmin(session);
+      } else {
+        setAdminProfile(null);
+        setLoading(false);
+      }
     });
 
     // Simple URL-based routing for MVP
@@ -96,11 +163,23 @@ function App() {
     return <UserPortal />;
   }
 
-  if (view === 'admin' && !session) {
-    return <Login onLogin={() => setView('admin')} />;
+  if (view === 'admin') {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c]">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        </div>
+      );
+    }
+    
+    if (!session || !adminProfile) {
+      return <Login onLogin={() => setView('admin')} />;
+    }
+    
+    return <Dashboard userProfile={adminProfile} />;
   }
 
-  return view === 'admin' ? <Dashboard /> : <RafflePage />;
+  return <RafflePage />;
 }
 
 export default App;

@@ -2,46 +2,17 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lock, Mail, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import BrandedModal from './BrandedModal';
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
     const [loading, setLoading] = useState(false);
-    const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [brandedModal, setBrandedModal] = useState({
-        isOpen: false,
-        title: '',
-        message: '',
-        type: 'info' as 'info' | 'success' | 'warning' | 'error' | 'confirm'
-    });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
-
-        if (isSignUp) {
-            const { error: signUpError } = await supabase.auth.signUp({
-                email,
-                password,
-            });
-            if (signUpError) {
-                setError(signUpError.message);
-                setLoading(false);
-            } else {
-                setBrandedModal({
-                    isOpen: true,
-                    title: '¡Cuenta Creada!',
-                    message: 'Tu cuenta de administrador ha sido configurada correctamente. Ahora puedes iniciar sesión.',
-                    type: 'success'
-                });
-                setIsSignUp(false);
-                setLoading(false);
-            }
-            return;
-        }
 
         const { error: authError } = await supabase.auth.signInWithPassword({
             email,
@@ -49,7 +20,7 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
         });
 
         if (authError) {
-            setError(authError.message);
+            setError(authError.message === 'Invalid login credentials' ? 'Credenciales inválidas. Verifica tu correo y contraseña.' : authError.message);
             setLoading(false);
         } else {
             onLogin();
@@ -70,10 +41,10 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                         <Lock className="text-primary" size={32} />
                     </div>
                     <h1 className="text-3xl font-display font-black text-gradient">
-                        {isSignUp ? 'Crear Administrador' : 'Admin Access'}
+                        Admin Access
                     </h1>
                     <p className="text-white/40 mt-2">
-                        {isSignUp ? 'Configura tu cuenta de admin para el MVP.' : 'Ingresa tus credenciales para administrar RIFATRONS.'}
+                        Ingresa tus credenciales para administrar RIFATRONS.
                     </p>
                 </div>
 
@@ -120,30 +91,14 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                         className="glow-button w-full text-lg mt-4"
                         disabled={loading}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : <>{isSignUp ? 'CREAR CUENTA' : 'ENTRAR AL PANEL'} <Sparkles size={20} /></>}
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => setIsSignUp(!isSignUp)}
-                        className="w-full text-xs text-white/20 hover:text-primary transition-colors mt-4 uppercase tracking-widest font-bold"
-                    >
-                        {isSignUp ? '¿Ya tienes cuenta? Inicia Sesión' : '¿Primer inicio? Crea tu Admin'}
+                        {loading ? <Loader2 className="animate-spin" /> : <>ENTRAR AL PANEL <Sparkles size={20} /></>}
                     </button>
                 </form>
 
-                <div className="mt-10 text-center text-[10px] text-white/10 uppercase tracking-[0.4em] font-bold">
-                    RIFATRONS SECURE ARCHITECTURE
+                <div className="mt-10 text-center text-[10px] text-white/20 uppercase tracking-[0.4em] font-bold">
+                    SOLO PERSONAL AUTORIZADO
                 </div>
             </motion.div>
-
-            <BrandedModal
-                isOpen={brandedModal.isOpen}
-                onClose={() => setBrandedModal({ ...brandedModal, isOpen: false })}
-                title={brandedModal.title}
-                message={brandedModal.message}
-                type={brandedModal.type}
-            />
         </div>
     );
 }

@@ -13,6 +13,8 @@ export default function RafflePage() {
     const [selectedBundle, setSelectedBundle] = useState<any>(null);
     const [platformSettings, setPlatformSettings] = useState<any>(null);
     const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+    const [useCustomQuantity, setUseCustomQuantity] = useState(false);
+    const [customQuantity, setCustomQuantity] = useState(1);
 
     const formatCOP = (amount: number) => {
         return new Intl.NumberFormat('es-CO', {
@@ -99,6 +101,7 @@ export default function RafflePage() {
 
         if (data) {
             setRaffle(data);
+            setCustomQuantity(data.min_tickets || 1);
 
             // 1. Check if this specific code has already been used by a participant
             // This allows cross-browser persistence
@@ -410,6 +413,7 @@ export default function RafflePage() {
                                                     type="button"
                                                     onClick={() => {
                                                         setSelectedBundle(bundle);
+                                                        setUseCustomQuantity(false);
                                                         setError('');
                                                     }}
                                                     className={`w-full p-6 rounded-2xl border text-left flex flex-col justify-between group transition-all duration-300 ${selectedBundle?.id === bundle.id
@@ -438,12 +442,69 @@ export default function RafflePage() {
                                                 <p className="text-white/40">No hay paquetes configurados.</p>
                                             </div>
                                         )}
+
+                                        {/* Custom Quantity Option */}
+                                        <div 
+                                            className={`w-full p-6 rounded-2xl border text-left flex flex-col justify-between group transition-all duration-300 relative ${useCustomQuantity
+                                                ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(37,99,235,0.2)]'
+                                                : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/[0.08]'
+                                                }`}
+                                            onClick={() => {
+                                                setUseCustomQuantity(true);
+                                                setSelectedBundle(null);
+                                                setError('');
+                                            }}
+                                        >
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${useCustomQuantity ? 'bg-primary text-white' : 'bg-white/5 text-white/40 group-hover:text-white'}`}>
+                                                    <Ticket size={20} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-black text-lg tracking-tight mb-0.5">Otra cantidad</div>
+                                                    <div className="text-sm font-bold text-primary tracking-wide">
+                                                        PERSONALIZADO
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {useCustomQuantity ? (
+                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                                                    <div className="flex items-center gap-3">
+                                                        <input 
+                                                            type="number"
+                                                            min={raffle.min_tickets || 1}
+                                                            value={customQuantity}
+                                                            onChange={(e) => setCustomQuantity(Math.max(raffle.min_tickets || 1, parseInt(e.target.value) || 0))}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 w-24 text-center font-mono font-bold text-lg focus:border-primary outline-none"
+                                                        />
+                                                        <span className="text-xs font-bold text-white/40 uppercase">Tickets</span>
+                                                    </div>
+                                                    <div className="text-2xl font-mono font-black text-white">
+                                                        {formatCOP(customQuantity * (raffle.ticket_price || 0))}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest">Elige cuántos quieres comprar</p>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="max-w-md mx-auto">
                                         <button
                                             onClick={() => {
-                                                if (!selectedBundle && raffle.is_paid) {
+                                                if (useCustomQuantity) {
+                                                    if (customQuantity < (raffle.min_tickets || 1)) {
+                                                        setError(`La compra mínima es de ${raffle.min_tickets} tickets.`);
+                                                        return;
+                                                    }
+                                                    setSelectedBundle({
+                                                        id: 'custom',
+                                                        name: `${customQuantity} Tickets (Personalizado)`,
+                                                        tickets: customQuantity,
+                                                        price: customQuantity * (raffle.ticket_price || 0)
+                                                    });
+                                                } else if (!selectedBundle && raffle.is_paid) {
                                                     setError('Selecciona un paquete para participar.');
                                                     return;
                                                 }

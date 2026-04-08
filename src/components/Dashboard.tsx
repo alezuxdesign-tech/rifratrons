@@ -27,18 +27,40 @@ import {
     Star,
     Link as LinkIcon,
     FileText,
-    Upload
+    Upload,
+    ShieldCheck,
+    UserPlus,
+    Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import BrandedModal from './BrandedModal';
 
-export default function Dashboard() {
+export interface AdminPermissions {
+    raffles: boolean;
+    participants: boolean;
+    analytics: boolean;
+    settings: boolean;
+    admins: boolean;
+}
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    role: 'admin' | 'superadmin';
+    permissions: AdminPermissions;
+    created_at?: string;
+}
+
+export default function Dashboard({ userProfile }: { userProfile: UserProfile }) {
     const [raffles, setRaffles] = useState<any[]>([]);
     const [stats, setStats] = useState({ totalParticipants: 0, totalTickets: 0, activeRaffles: 0 });
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editModalOpen, setEditModalOpen] = useState(false);
-    const [newRaffle, setNewRaffle] = useState<{ name: string, description: string, total_numbers: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number, image_url: string }>({ name: '', description: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
+    const [newRaffle, setNewRaffle] = useState<{ name: string, description: string, total_numbers: number, digits: number, use_custom_limit: boolean, custom_limit: number, reserved_numbers: string, ticket_bundles: any[], is_paid: boolean, ticket_price: number, min_tickets: number, image_url: string, use_blessed_numbers: boolean, blessed_quantity: number, blessed_interval: number, blessed_numbers: number[] }>({ 
+        name: '', description: '', total_numbers: 100000, digits: 5, use_custom_limit: false, custom_limit: 1000, reserved_numbers: '', ticket_bundles: [], is_paid: true, ticket_price: 0, min_tickets: 1, image_url: '',
+        use_blessed_numbers: false, blessed_quantity: 0, blessed_interval: 0, blessed_numbers: []
+    });
     const [editingRaffle, setEditingRaffle] = useState<any>(null);
     const [deleting, setDeleting] = useState(false);
     const [creating, setCreating] = useState(false);
@@ -50,6 +72,18 @@ export default function Dashboard() {
     const [loadingAnalytics, setLoadingAnalytics] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterBundle, setFilterBundle] = useState('');
+    const [allAdmins, setAllAdmins] = useState<any[]>([]);
+    const [loadingAdmins, setLoadingAdmins] = useState(false);
+    const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+    const [newAdminEmail, setNewAdminEmail] = useState('');
+    const [newAdminRole, setNewAdminRole] = useState<'admin' | 'superadmin'>('admin');
+    const [newAdminPermissions, setNewAdminPermissions] = useState({
+        raffles: true,
+        participants: true,
+        analytics: true,
+        settings: true,
+        admins: false
+    });
 
     const [brandedModal, setBrandedModal] = useState<{
         isOpen: boolean;
@@ -76,7 +110,6 @@ export default function Dashboard() {
         platform_name: 'Rifatrons',
         primary_color: '#3b82f6',
         logo_url: '',
-        manychat_webhook_url: '',
         terms_and_conditions: '',
         mp_public_key: '',
         mp_access_token: ''
@@ -112,6 +145,55 @@ export default function Dashboard() {
             setSettings(data);
             localStorage.setItem('platform_settings', JSON.stringify(data));
         }
+    }
+
+    async function fetchAdmins() {
+        if (!userProfile.permissions?.admins && userProfile.role !== 'superadmin') return;
+        setLoadingAdmins(true);
+        const { data } = await supabase.from('admin_profiles').select('*').order('created_at', { ascending: false });
+        if (data) setAllAdmins(data);
+        setLoadingAdmins(false);
+    }
+
+    async function handleAddAdmin(e: FormEvent) {
+        e.preventDefault();
+        setLoadingAdmins(true);
+        try {
+            const { error } = await supabase.from('admin_profiles').insert([{
+                email: newAdminEmail.toLowerCase().trim(),
+                role: newAdminRole,
+                permissions: newAdminPermissions,
+                full_name: 'Nuevo Admin'
+            }]);
+
+            if (error) throw error;
+
+            showAlert('Admin Creado', `Se ha invitado a ${newAdminEmail} como administrador.`, 'success');
+            setIsAddingAdmin(false);
+            setNewAdminEmail('');
+            fetchAdmins();
+        } catch (error: any) {
+            showAlert('Error', error.message || 'No se pudo crear el administrador', 'error');
+        } finally {
+            setLoadingAdmins(false);
+        }
+    }
+
+    async function handleDeleteAdmin(id: string, email: string) {
+        if (email === userProfile.email) {
+            showAlert('Acción denegada', 'No puedes eliminarte a ti mismo.', 'warning');
+            return;
+        }
+
+        showConfirm('Eliminar Administrador', `¿Estás seguro de que quieres eliminar a ${email}? Perderá el acceso de inmediato.`, async () => {
+            const { error } = await supabase.from('admin_profiles').delete().eq('id', id);
+            if (!error) {
+                showAlert('Eliminado', 'El administrador ha sido eliminado.', 'success');
+                fetchAdmins();
+            } else {
+                showAlert('Error', 'No se pudo eliminar al administrador.', 'error');
+            }
+        });
     }
 
     async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -278,27 +360,6 @@ export default function Dashboard() {
         await supabase.auth.signOut();
     };
 
-    const handleGenerateTestLink = async (raffleId: string) => {
-        try {
-            const { data, error } = await supabase.functions.invoke('manychat-webhook', {
-                body: { raffle_id: raffleId }
-            });
-
-            if (error) throw error;
-
-            if (data?.raffle_url) {
-                navigator.clipboard.writeText(data.raffle_url);
-                showAlert(
-                    'Link Generado',
-                    '¡Link Único generado y copiado!\n\nEste link es para un solo uso y simula lo que ManyChat enviaría al usuario.',
-                    'success'
-                );
-            }
-        } catch (err) {
-            console.error('Test link error:', err);
-            showAlert('Error', 'Error generando link: ' + (err instanceof Error ? err.message : JSON.stringify(err)), 'error');
-        }
-    };
 
     const handleCreateRaffle = async (e: FormEvent) => {
         e.preventDefault();
@@ -309,15 +370,34 @@ export default function Dashboard() {
             ? newRaffle.reserved_numbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
             : [];
 
+        const total_numbers = newRaffle.use_custom_limit ? newRaffle.custom_limit : Math.pow(10, newRaffle.digits);
+        
         const { error } = await supabase.from('raffles').insert([
-            { ...newRaffle, reserved_numbers: reservedNumbersArray, active: true }
+            { 
+              name: newRaffle.name,
+              description: newRaffle.description,
+              total_numbers: total_numbers,
+              reserved_numbers: reservedNumbersArray,
+              ticket_bundles: newRaffle.ticket_bundles,
+              is_paid: true,
+              ticket_price: newRaffle.ticket_price,
+              min_tickets: newRaffle.min_tickets || 1,
+              image_url: newRaffle.image_url,
+              use_blessed_numbers: newRaffle.use_blessed_numbers,
+              blessed_numbers: newRaffle.blessed_numbers,
+              blessed_config: { quantity: newRaffle.blessed_quantity, interval: newRaffle.blessed_interval },
+              active: true 
+            }
         ]);
 
         if (error) {
             showAlert('Error', 'No se pudo crear la rifa: ' + error.message, 'error');
         } else {
             setIsModalOpen(false);
-            setNewRaffle({ name: '', description: '', total_numbers: 100000, reserved_numbers: '', ticket_bundles: [], is_paid: false, ticket_price: 0, image_url: '' });
+            setNewRaffle({ 
+                name: '', description: '', total_numbers: 100000, digits: 5, use_custom_limit: false, custom_limit: 1000, reserved_numbers: '', ticket_bundles: [], is_paid: true, ticket_price: 0, min_tickets: 1, image_url: '',
+                use_blessed_numbers: false, blessed_quantity: 0, blessed_interval: 0, blessed_numbers: []
+            });
             fetchData();
         }
         setCreating(false);
@@ -335,18 +415,24 @@ export default function Dashboard() {
             reservedNumbersArray = [];
         }
 
+        const total_numbers = editingRaffle.use_custom_limit ? editingRaffle.custom_limit : Math.pow(10, editingRaffle.digits);
+
         const { error } = await supabase
             .from('raffles')
             .update({
                 name: editingRaffle.name,
                 description: editingRaffle.description || '',
                 active: editingRaffle.active,
-                total_numbers: editingRaffle.total_numbers,
+                total_numbers: total_numbers,
                 reserved_numbers: reservedNumbersArray,
                 ticket_bundles: editingRaffle.ticket_bundles || [],
-                is_paid: editingRaffle.is_paid || false,
+                is_paid: true,
                 ticket_price: editingRaffle.ticket_price || 0,
-                image_url: editingRaffle.image_url || ''
+                min_tickets: editingRaffle.min_tickets || 1,
+                image_url: editingRaffle.image_url || '',
+                use_blessed_numbers: editingRaffle.use_blessed_numbers || false,
+                blessed_numbers: editingRaffle.blessed_numbers || [],
+                blessed_config: { quantity: editingRaffle.blessed_quantity || 0, interval: editingRaffle.blessed_interval || 0 }
             })
             .eq('id', editingRaffle.id);
 
@@ -358,6 +444,38 @@ export default function Dashboard() {
             showAlert('Actualizada', 'Rifa actualizada con éxito.', 'success');
         }
         setCreating(false);
+    };
+
+    const generateBlessedNumbers = (quantity: number, interval: number, total: number, reserved: number[]) => {
+        const blessed: number[] = [];
+        if (quantity <= 0 || total <= 0) return [];
+
+        if (interval > 0) {
+            // Generación por intervalos
+            for (let i = 0; i < quantity; i++) {
+                const start = i * interval;
+                const end = Math.min((i + 1) * interval - 1, total - 1);
+                if (start >= total) break;
+
+                let num;
+                let attempts = 0;
+                do {
+                    num = Math.floor(Math.random() * (end - start + 1)) + start;
+                    attempts++;
+                } while (reserved.includes(num) && attempts < 100);
+                
+                if (!blessed.includes(num)) blessed.push(num);
+            }
+        } else {
+            // Generación puramente aleatoria
+            while (blessed.length < quantity && blessed.length < total) {
+                const num = Math.floor(Math.random() * total);
+                if (!reserved.includes(num) && !blessed.includes(num)) {
+                    blessed.push(num);
+                }
+            }
+        }
+        return blessed.sort((a, b) => a - b);
     };
 
     const fetchParticipants = async (raffleId: string) => {
@@ -488,11 +606,27 @@ export default function Dashboard() {
 
                 <nav className="space-y-3 w-full flex-1 pt-8 lg:pt-0">
                     <NavItem icon={<BarChart3 size={20} />} label="Resumen" active={activeTab === 'Resumen'} onClick={() => { setActiveTab('Resumen'); setIsMobileMenuOpen(false); }} />
-                    <NavItem icon={<Ticket size={20} />} label="Mis Rifas" active={activeTab === 'Mis Rifas'} onClick={() => { setActiveTab('Mis Rifas'); setIsMobileMenuOpen(false); }} />
-                    <NavItem icon={<Users size={20} />} label="Participantes" active={activeTab === 'Participantes'} onClick={() => { setActiveTab('Participantes'); setIsMobileMenuOpen(false); }} />
-                    <NavItem icon={<TrendingUp size={20} />} label="Analíticas" active={activeTab === 'Analíticas'} onClick={() => { setActiveTab('Analíticas'); setIsMobileMenuOpen(false); }} />
+                    
+                    {userProfile.permissions?.raffles && (
+                        <NavItem icon={<Ticket size={20} />} label="Mis Rifas" active={activeTab === 'Mis Rifas'} onClick={() => { setActiveTab('Mis Rifas'); setIsMobileMenuOpen(false); }} />
+                    )}
+                    
+                    {userProfile.permissions?.participants && (
+                        <NavItem icon={<Users size={20} />} label="Participantes" active={activeTab === 'Participantes'} onClick={() => { setActiveTab('Participantes'); setIsMobileMenuOpen(false); }} />
+                    )}
+                    
+                    {userProfile.permissions?.analytics && (
+                        <NavItem icon={<TrendingUp size={20} />} label="Analíticas" active={activeTab === 'Analíticas'} onClick={() => { setActiveTab('Analíticas'); setIsMobileMenuOpen(false); }} />
+                    )}
+
+                    {(userProfile.permissions?.admins || userProfile.role === 'superadmin') && (
+                        <NavItem icon={<ShieldCheck size={20} />} label="Admins" active={activeTab === 'Admins'} onClick={() => { setActiveTab('Admins'); setIsMobileMenuOpen(false); fetchAdmins(); }} />
+                    )}
+                    
                     <div className="pt-8 mb-4 border-t border-white/5">
-                        <NavItem icon={<Settings size={20} />} label="Configuración" active={activeTab === 'Configuración'} onClick={() => { setActiveTab('Configuración'); setIsMobileMenuOpen(false); }} />
+                        {userProfile.permissions?.settings && (
+                            <NavItem icon={<Settings size={20} />} label="Configuración" active={activeTab === 'Configuración'} onClick={() => { setActiveTab('Configuración'); setIsMobileMenuOpen(false); }} />
+                        )}
                     </div>
                 </nav>
 
@@ -520,12 +654,18 @@ export default function Dashboard() {
                         <h1 className="text-3xl sm:text-4xl font-display font-black text-gradient">Panel de Control</h1>
                     </div>
 
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="glow-button px-5 py-4 w-full sm:w-auto text-sm"
-                    >
-                        <Plus size={18} strokeWidth={3} /> <span className="mr-2">NUEVA RIFA</span>
-                    </button>
+                    <div className="flex items-center gap-6 w-full sm:w-auto">
+                        <div className="text-right hidden md:block">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-0.5">{userProfile.role}</p>
+                            <p className="text-xs font-bold text-white/40">{userProfile.email}</p>
+                        </div>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="glow-button px-5 py-4 flex-1 sm:flex-none text-sm"
+                        >
+                            <Plus size={18} strokeWidth={3} /> <span className="mr-2">NUEVA RIFA</span>
+                        </button>
+                    </div>
                 </header>
 
                 {activeTab === 'Resumen' && (
@@ -534,7 +674,7 @@ export default function Dashboard() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                             <StatCard title="Participantes" value={stats.totalParticipants.toLocaleString()} sub="Registros hoy" icon={<Users className="text-primary" />} gradient="from-blue-500/20 to-transparent" />
                             <StatCard title="Tickets" value={stats.totalTickets.toLocaleString()} sub="Asignados" icon={<Ticket className="text-emerald-500" />} gradient="from-emerald-500/20 to-transparent" />
-                            <StatCard title="Ingresos" value="$0.00" sub="Fase MVP Gratis" icon={<TrendingUp className="text-amber-500" />} gradient="from-amber-500/20 to-transparent" />
+                            <StatCard title="Ingresos" value="$0.00" sub="Ventas Totales" icon={<TrendingUp className="text-amber-500" />} gradient="from-amber-500/20 to-transparent" />
                         </div>
 
                         {/* Recent Raffles Grid - Simple List */}
@@ -548,7 +688,7 @@ export default function Dashboard() {
                                 </div>
                                 <div className="space-y-4">
                                     {raffles.slice(0, 3).map((raffle) => (
-                                        <div className="flex-1">
+                                        <div key={raffle.id} className="flex-1">
                                             <div className="flex items-center justify-between mb-2">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -557,8 +697,8 @@ export default function Dashboard() {
                                                     <span className="font-bold">{raffle.name}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`text-[10px] font-bold uppercase py-1 px-2 rounded-md ${raffle.is_paid ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>
-                                                        {raffle.is_paid ? 'Paga' : 'Gratis'}
+                                                    <span className={`text-[10px] font-bold uppercase py-1 px-2 rounded-md bg-amber-500/10 text-amber-500 border border-amber-500/20`}>
+                                                        Paga
                                                     </span>
                                                     <span className={`text-[10px] font-bold uppercase py-1 px-3 rounded-full ${raffle.active ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-500'}`}>
                                                         {raffle.active ? 'Activa' : 'Finalizada'}
@@ -607,8 +747,8 @@ export default function Dashboard() {
                                                         <span>•</span>
                                                         <span>{raffle.total_numbers.toLocaleString()} Tickets</span>
                                                         <span>•</span>
-                                                        <span className={`px-2 py-0.5 rounded-md border ${raffle.is_paid ? 'bg-amber-500/5 border-amber-500/20 text-amber-500' : 'bg-blue-500/5 border-blue-500/20 text-blue-400'}`}>
-                                                            {raffle.is_paid ? 'Rifa Paga' : 'Rifa Gratis'}
+                                                        <span className={`px-2 py-0.5 rounded-md border bg-amber-500/5 border-amber-500/20 text-amber-500`}>
+                                                            Rifa Paga
                                                         </span>
                                                     </div>
                                                 </div>
@@ -624,60 +764,47 @@ export default function Dashboard() {
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        setEditingRaffle(raffle);
+                                                        const digits = Math.ceil(Math.log10(raffle.total_numbers || 1)) || 5;
+                                                        const isPowerOf10 = Math.pow(10, digits) === raffle.total_numbers;
+                                                        
+                                                        setEditingRaffle({ 
+                                                          ...raffle, 
+                                                          digits: digits, 
+                                                          use_custom_limit: !isPowerOf10, 
+                                                          custom_limit: raffle.total_numbers,
+                                                          use_blessed_numbers: raffle.use_blessed_numbers || false,
+                                                          blessed_config: { quantity: raffle.blessed_config?.quantity || 0, interval: raffle.blessed_config?.interval || 0 },
+                                                          blessed_numbers: raffle.blessed_numbers || [],
+                                                          min_tickets: raffle.min_tickets || 1
+                                                        });
                                                         setEditModalOpen(true);
                                                     }}
                                                     className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-sm font-bold hover:bg-white/10 transition-colors"
                                                 >
                                                     Editar
                                                 </button>
-                                                <div className="flex gap-2">
-                                                    {/* ManyChat components - ONLY for free raffles */}
-                                                    {raffle.is_paid !== true && (
-                                                        <>
-                                                            <button
-                                                                className="py-3 px-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold hover:bg-indigo-500/20 transition-colors flex items-center justify-center gap-2"
-                                                                onClick={() => handleGenerateTestLink(raffle.id)}
-                                                                title="Generar link de prueba para ManyChat"
-                                                            >
-                                                                <Zap size={14} /> Link ManyChat
-                                                            </button>
-                                                            <button
-                                                                className="py-3 px-4 rounded-xl bg-primary/10 border border-primary/20 text-primary text-xs font-bold hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
-                                                                onClick={() => {
-                                                                    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}`;
-                                                                    navigator.clipboard.writeText(url);
-                                                                    showAlert('Copiado', 'Link de Webhook copiado para ManyChat', 'success');
-                                                                }}
-                                                                title="Copiar URL para el bloque External Request de ManyChat"
-                                                            >
-                                                                <ExternalLink size={14} /> Webhook
-                                                            </button>
-                                                        </>
-                                                    )}
 
-                                                    {/* Direct Raffle Link - ALWAYS available, especially for Paid raffles */}
+                                                {/* Direct Raffle Link - ALWAYS available */}
+                                                <button
+                                                    className="py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
+                                                    onClick={() => {
+                                                        const url = `${window.location.origin}/raffle/${raffle.id}`;
+                                                        navigator.clipboard.writeText(url);
+                                                        showAlert('Copiado', 'Link del sorteo copiado para redes sociales', 'success');
+                                                    }}
+                                                    title="Link directo para compartir en redes sociales"
+                                                >
+                                                    <LinkIcon size={14} className="text-primary" /> Link Redes
+                                                </button>
+
+                                                {raffle.active && (
                                                     <button
-                                                        className="py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-white/80 text-xs font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2"
-                                                        onClick={() => {
-                                                            const url = `${window.location.origin}/raffle/${raffle.id}`;
-                                                            navigator.clipboard.writeText(url);
-                                                            showAlert('Copiado', 'Link del sorteo copiado para redes sociales', 'success');
-                                                        }}
-                                                        title="Link directo para compartir en redes sociales"
+                                                        className="py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
+                                                        onClick={() => handlePickWinner(raffle.id)}
                                                     >
-                                                        <LinkIcon size={14} className="text-primary" /> Link Redes
+                                                        <Trophy size={14} /> Sortear
                                                     </button>
-
-                                                    {raffle.active && (
-                                                        <button
-                                                            className="py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
-                                                            onClick={() => handlePickWinner(raffle.id)}
-                                                        >
-                                                            <Trophy size={14} /> Sortear
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -704,7 +831,7 @@ export default function Dashboard() {
                                         </div>
 
                                         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <div className={`${raffle.is_paid ? 'md:col-span-3' : ''} p-6 rounded-2xl bg-primary/5 border border-primary/20 relative group/link`}>
+                                            <div className="md:col-span-3 p-6 rounded-2xl bg-primary/5 border border-primary/20 relative group/link">
                                                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3 flex items-center gap-2">
                                                     <ExternalLink size={12} /> Link Público (Redes Sociales)
                                                 </p>
@@ -723,49 +850,8 @@ export default function Dashboard() {
                                                 </button>
                                                 <p className="mt-3 text-[9px] text-white/40 italic">Comparte este link para que los usuarios entren directo a esta rifa.</p>
                                             </div>
-
-                                            {raffle.is_paid !== true && (
-                                                <>
-                                                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-[#a855f7] mb-3 flex items-center gap-2">
-                                                            <Sparkles size={12} /> Link Mágico (ManyChat)
-                                                        </p>
-                                                        <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
-                                                            {import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id={raffle.id}&redirect=true
-                                                            <button
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manychat-webhook?raffle_id=${raffle.id}&redirect=true`);
-                                                                    showAlert('Copiado', 'Link Mágico copiado correctamente.', 'success');
-                                                                }}
-                                                                className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                            >
-                                                                <ExternalLink size={12} />
-                                                            </button>
-                                                        </div>
-                                                        <p className="mt-3 text-[9px] text-white/30 italic">Pega este link en botones de ManyChat. Genera ticket automático.</p>
-                                                    </div>
-
-                                                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 relative group/link">
-                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
-                                                            <Zap size={12} /> ManyChat POST (Avanzado)
-                                                        </p>
-                                                        <div className="flex items-center gap-3 font-mono text-[10px] text-white/40 break-all bg-black/20 p-4 rounded-xl border border-white/5">
-                                                            {`{ "raffle_id": "${raffle.id}" }`}
-                                                            <button
-                                                                onClick={() => {
-                                                                    navigator.clipboard.writeText(`{ "raffle_id": "${raffle.id}" }`);
-                                                                    showAlert('Copiado', 'JSON copiado para configuración avanzada.', 'success');
-                                                                }}
-                                                                className="absolute right-8 top-[3.2rem] p-2 rounded-lg bg-white/10 hover:bg-white/20 opacity-0 group-hover/link:opacity-100 transition-opacity"
-                                                            >
-                                                                <ExternalLink size={12} />
-                                                            </button>
-                                                        </div>
-                                                        <p className="mt-3 text-[9px] text-white/30 italic">Para usar con 'External Request' y guardar la URL.</p>
-                                                    </div>
-                                                </>
-                                            )}
                                         </div>
+
                                         {!raffle.active && raffle.winning_number && (
                                             <div className="mt-8 p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-3xl flex items-center justify-between relative overflow-hidden group/winner">
                                                 <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
@@ -792,7 +878,8 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {activeTab === 'Participantes' && (
+
+                {activeTab === 'Participantes' && userProfile.permissions?.participants && (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <section className="glass-panel p-8">
                             <div className="flex items-center justify-between mb-8">
@@ -916,7 +1003,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {activeTab === 'Analíticas' && (
+                {activeTab === 'Analíticas' && userProfile.permissions?.analytics && (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         {loadingAnalytics ? (
                             <div className="flex items-center justify-center py-20">
@@ -1133,7 +1220,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {activeTab === 'Configuración' && (
+                {activeTab === 'Configuración' && userProfile.permissions?.settings && (
                     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500">
                         <div className="mb-10">
                             <h2 className="text-3xl font-display font-black mb-2 flex items-center gap-3">
@@ -1228,27 +1315,6 @@ export default function Dashboard() {
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Integrations */}
-                            <div className="glass-panel p-8">
-                                <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4">
-                                    <LinkIcon className="text-emerald-500" size={20} /> Integraciones Avanzadas
-                                </h3>
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">ManyChat Webhook Global (Opcional)</label>
-                                        <input
-                                            type="url"
-                                            value={settings.manychat_webhook_url || ''}
-                                            onChange={(e) => setSettings({ ...settings, manychat_webhook_url: e.target.value })}
-                                            placeholder="https://api.manychat.com/..."
-                                            className="premium-input w-full"
-                                        />
-                                        <p className="text-[10px] text-white/30 italic">Utiliza esta URL si cuentas con un flujo genérico centralizado en ManyChat para todas tus rifas.</p>
-                                    </div>
-                                </div>
-                            </div>
-
                             {/* Pasarela de Pagos (MercadoPago) */}
                             <div className="glass-panel p-8 border-emerald-500/20">
                                 <h3 className="text-xl font-display font-bold mb-6 flex items-center gap-2 border-b border-white/10 pb-4 text-emerald-400">
@@ -1359,6 +1425,172 @@ export default function Dashboard() {
                         </AnimatePresence>
                     </div>
                 )}
+
+                {activeTab === 'Admins' && (userProfile.permissions?.admins || userProfile.role === 'superadmin') && (
+                    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
+                            <div>
+                                <h2 className="text-3xl font-display font-black mb-2 flex items-center gap-3">
+                                    <ShieldCheck className="text-primary" /> Gestión de Equipo
+                                </h2>
+                                <p className="text-white/40">Controla quién tiene acceso al panel y qué acciones puede realizar.</p>
+                            </div>
+                            <button
+                                onClick={() => setIsAddingAdmin(true)}
+                                className="glow-button px-6 py-3 flex items-center gap-2 group"
+                            >
+                                <UserPlus size={20} className="group-hover:rotate-12 transition-transform" />
+                                <span>Añadir Admin</span>
+                            </button>
+                        </div>
+
+                        {loadingAdmins && allAdmins.length === 0 ? (
+                            <div className="flex items-center justify-center py-20">
+                                <Activity className="animate-spin text-primary" size={32} />
+                            </div>
+                        ) : (
+                            <>
+                                {isAddingAdmin && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="glass-panel p-8 border-primary/20 relative overflow-hidden mb-8"
+                                    >
+                                        <div className="absolute top-0 right-0 p-4">
+                                            <button onClick={() => setIsAddingAdmin(false)} className="text-white/20 hover:text-white"><X size={20} /></button>
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-6">Nuevo Administrador</h3>
+                                        <form onSubmit={handleAddAdmin} className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Correo Electrónico</label>
+                                                    <input
+                                                        type="email"
+                                                        value={newAdminEmail}
+                                                        onChange={(e) => setNewAdminEmail(e.target.value)}
+                                                        className="premium-input w-full"
+                                                        placeholder="ejemplo@correo.com"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Rol</label>
+                                                    <select
+                                                        value={newAdminRole}
+                                                        onChange={(e) => setNewAdminRole(e.target.value as any)}
+                                                        className="premium-input w-full appearance-none"
+                                                    >
+                                                        <option value="admin">Administrador (Permisos Limitados)</option>
+                                                        <option value="superadmin">Superadmin (Acceso Total)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Permisos Granulares</label>
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                                                    {Object.entries(newAdminPermissions).map(([key, val]) => (
+                                                        <label key={key} className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={val}
+                                                                onChange={(e) => setNewAdminPermissions({ ...newAdminPermissions, [key]: e.target.checked })}
+                                                                className="w-4 h-4 rounded border-white/10 bg-black text-primary"
+                                                            />
+                                                            <span className="text-xs capitalize font-bold">{key === 'raffles' ? 'Rifas' : key === 'participants' ? 'Clientes' : key === 'analytics' ? 'Datos' : key === 'settings' ? 'Ajustes' : 'Equipo'}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end pt-4">
+                                                <button type="submit" disabled={loadingAdmins} className="glow-button px-8 py-4">
+                                                    {loadingAdmins ? <Activity className="animate-spin" /> : 'Crear Acceso'}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </motion.div>
+                                )}
+
+                                <div className="glass-panel overflow-hidden border-white/5">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead>
+                                                <tr className="border-b border-white/5 bg-white/[0.02]">
+                                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-white/40">Administrador</th>
+                                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-white/40">Rol</th>
+                                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-white/40">Permisos</th>
+                                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-white/40">Estado</th>
+                                                    <th className="px-6 py-4 text-xs font-black uppercase tracking-widest text-white/40">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {allAdmins.map((admin) => (
+                                                    <tr key={admin.id} className="hover:bg-white/[0.02] transition-colors group">
+                                                        <td className="px-6 py-6">
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${admin.role === 'superadmin' ? 'bg-primary/20 text-primary' : 'bg-white/5 text-white/40'}`}>
+                                                                    {admin.email[0].toUpperCase()}
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-bold flex items-center gap-2">
+                                                                        {admin.email}
+                                                                        {admin.email === userProfile.email && <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">Tú</span>}
+                                                                    </div>
+                                                                    <div className="text-xs text-white/20">Añadido el {new Date(admin.created_at).toLocaleDateString()}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-6">
+                                                            <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${admin.role === 'superadmin' ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-white/5 text-white/40 border border-white/10'}`}>
+                                                                {admin.role}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-6">
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {Object.entries(admin.permissions || {}).map(([key, val]) => (val as boolean) && (
+                                                                    <span key={key} className="w-2 h-2 rounded-full bg-emerald-500/50" title={key}></span>
+                                                                ))}
+                                                            </div>
+                                                            <div className="text-[8px] text-white/10 mt-1 uppercase tracking-tighter">
+                                                                {Object.entries(admin.permissions || {}).filter(([, v]) => v).map(([k]) => k).join(', ')}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-6">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"></div>
+                                                                <span className="text-xs font-medium text-white/60">Activo</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-6">
+                                                            <button 
+                                                                onClick={() => handleDeleteAdmin(admin.id, admin.email)}
+                                                                disabled={admin.email === userProfile.email || (admin.role === 'superadmin' && allAdmins.filter(a => a.role === 'superadmin').length === 1)}
+                                                                className="p-3 rounded-xl bg-white/5 text-white/20 hover:bg-red-500/10 hover:text-red-400 transition-all border border-transparent hover:border-red-500/20 disabled:opacity-20 disabled:cursor-not-allowed"
+                                                            >
+                                                                <Trash2 size={18} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-4">
+                            <ShieldCheck className="text-primary mt-1" size={20} />
+                            <div>
+                                <h4 className="font-bold text-primary mb-1">Nota de Seguridad</h4>
+                                <p className="text-xs text-white/40 leading-relaxed italic">
+                                    Los Superadmins tienen acceso total a la plataforma, incluyendo la gestión de otros administradores y la configuración financiera. Recomendamos mantener un número limitado de Superadmins por seguridad.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
 
             {/* Modal - Create Raffle */}
@@ -1415,16 +1647,54 @@ export default function Dashboard() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Total de Números</label>
-                                    <input
-                                        type="number"
-                                        value={newRaffle.total_numbers}
-                                        onChange={(e) => setNewRaffle({ ...newRaffle, total_numbers: parseInt(e.target.value) })}
-                                        className="premium-input w-full"
-                                        required
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Cifras a jugar</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="8"
+                                            value={newRaffle.digits}
+                                            onChange={(e) => setNewRaffle({ ...newRaffle, digits: parseInt(e.target.value) || 0 })}
+                                            className="premium-input w-full font-mono"
+                                            required
+                                        />
+                                        <p className="text-[10px] text-primary font-bold ml-1 uppercase tracking-tighter">
+                                            {Math.pow(10, newRaffle.digits).toLocaleString()} combinaciones
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col justify-end pb-1">
+                                        <label className="flex items-center gap-3 cursor-pointer group mb-1">
+                                            <div className="relative inline-flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={newRaffle.use_custom_limit}
+                                                    onChange={(e) => setNewRaffle({ ...newRaffle, use_custom_limit: e.target.checked })}
+                                                />
+                                                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors"></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest group-hover:text-white/60 transition-colors">Limitar pool</span>
+                                        </label>
+                                    </div>
                                 </div>
+
+                                {newRaffle.use_custom_limit && (
+                                    <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números que van a jugar</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={Math.pow(10, newRaffle.digits)}
+                                            value={newRaffle.custom_limit}
+                                            onChange={(e) => setNewRaffle({ ...newRaffle, custom_limit: parseInt(e.target.value) || 0 })}
+                                            className="premium-input w-full border-primary/30 focus:border-primary/60"
+                                            required={newRaffle.use_custom_limit}
+                                        />
+                                        <p className="text-[10px] text-white/30 ml-1">Rango: 0 al {((newRaffle.custom_limit || 1) - 1).toString().padStart(newRaffle.digits, '0')}</p>
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números Reservados (Separados por coma)</label>
@@ -1438,24 +1708,87 @@ export default function Dashboard() {
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar. Ideal si no quieres que la rifa empiece desde el 0.</p>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-4">
                                     <label className="flex items-center gap-3 cursor-pointer group">
                                         <div className="relative inline-flex items-center">
                                             <input
                                                 type="checkbox"
                                                 className="sr-only peer"
-                                                checked={newRaffle.is_paid || false}
-                                                onChange={(e) => {
-                                                    setNewRaffle({ ...newRaffle, is_paid: e.target.checked });
-                                                }}
+                                                checked={newRaffle.use_blessed_numbers || false}
+                                                onChange={(e) => setNewRaffle({ ...newRaffle, use_blessed_numbers: e.target.checked })}
                                             />
-                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary transition-colors"></div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-sm text-white select-none">Rifa de Pago</p>
-                                            <p className="text-[10px] text-white/40 select-none">Actívalo para cobrar por ticket</p>
+                                        <div className="flex items-center gap-2">
+                                            <Zap size={16} className="text-primary" />
+                                            <div>
+                                                <p className="font-bold text-sm text-white select-none">Números Bendecidos</p>
+                                                <p className="text-[10px] text-white/40 select-none">Premios instantáneos aleatorios</p>
+                                            </div>
                                         </div>
                                     </label>
+
+                                    {newRaffle.use_blessed_numbers && (
+                                        <div className="space-y-4 animate-in fade-in zoom-in duration-300 pt-2 border-t border-white/5">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cantidad</label>
+                                                    <input
+                                                        type="number"
+                                                        value={newRaffle.blessed_quantity || ''}
+                                                        onChange={(e) => setNewRaffle({ ...newRaffle, blessed_quantity: parseInt(e.target.value) || 0 })}
+                                                        className="premium-input w-full text-sm py-2"
+                                                        placeholder="Ej: 10"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cada cuanto (Intervalo)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={newRaffle.blessed_interval || ''}
+                                                        onChange={(e) => setNewRaffle({ ...newRaffle, blessed_interval: parseInt(e.target.value) || 0 })}
+                                                        className="premium-input w-full text-sm py-2"
+                                                        placeholder="Ej: 500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const total = newRaffle.use_custom_limit ? newRaffle.custom_limit : Math.pow(10, newRaffle.digits);
+                                                    const resArr = newRaffle.reserved_numbers ? newRaffle.reserved_numbers.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)) : [];
+                                                    const generated = generateBlessedNumbers(newRaffle.blessed_quantity, newRaffle.blessed_interval, total, resArr);
+                                                    setNewRaffle({ ...newRaffle, blessed_numbers: generated });
+                                                }}
+                                                className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl border border-primary/20 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Activity size={14} /> GENERAR NÚMEROS
+                                            </button>
+
+                                            {(newRaffle.blessed_numbers || []).length > 0 && (
+                                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-black/20 rounded-xl scrollbar-hide">
+                                                    {newRaffle.blessed_numbers.map(num => (
+                                                        <span key={num} className="px-2 py-1 bg-primary/20 text-primary text-[10px] font-mono font-bold rounded-lg border border-primary/30">
+                                                            #{num.toString().padStart(newRaffle.digits, '0')}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-11 h-6 bg-emerald-500 rounded-full relative flex items-center justify-end px-1 border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)] opacity-50 cursor-not-allowed">
+                                            <div className="w-4 h-4 bg-white rounded-full"></div>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm text-white select-none opacity-50">Rifa de Pago (Siempre Activo)</p>
+                                            <p className="text-[10px] text-emerald-400 font-bold select-none">Solo se permiten rifas monetizadas</p>
+                                        </div>
+                                    </div>
 
                                     <div className="space-y-2">
                                         <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Imagen de Portada (Opcional)</label>
@@ -1492,25 +1825,39 @@ export default function Dashboard() {
                                     </div>
 
                                     {newRaffle.is_paid && (
-                                        <div className="space-y-2 animate-in fade-in zoom-in duration-300">
-                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={newRaffle.ticket_price || ''}
-                                                onChange={(e) => {
-                                                    const price = parseInt(e.target.value) || 0;
-                                                    const updatedBundles = (newRaffle.ticket_bundles || []).map((b: any) => ({
-                                                        ...b,
-                                                        price: b.tickets * price
-                                                    }));
-                                                    setNewRaffle({ ...newRaffle, ticket_price: price, ticket_bundles: updatedBundles });
-                                                }}
-                                                placeholder="Ej: 10000"
-                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
-                                                required={newRaffle.is_paid}
-                                            />
-                                        </div>
+                                        <>
+                                            <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={newRaffle.ticket_price || ''}
+                                                    onChange={(e) => {
+                                                        const price = parseInt(e.target.value) || 0;
+                                                        const updatedBundles = (newRaffle.ticket_bundles || []).map((b: any) => ({
+                                                            ...b,
+                                                            price: b.tickets * price
+                                                        }));
+                                                        setNewRaffle({ ...newRaffle, ticket_price: price, ticket_bundles: updatedBundles });
+                                                    }}
+                                                    placeholder="Ej: 10000"
+                                                    className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
+                                                    required={newRaffle.is_paid}
+                                                />
+                                            </div>
+                                            <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Compra Mínima (Tickets)</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={newRaffle.min_tickets || ''}
+                                                    onChange={(e) => setNewRaffle({ ...newRaffle, min_tickets: parseInt(e.target.value) || 1 })}
+                                                    placeholder="Ej: 1"
+                                                    className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
+                                                    required={newRaffle.is_paid}
+                                                />
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
@@ -1630,16 +1977,54 @@ export default function Dashboard() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Total Tickets</label>
-                                    <input
-                                        type="number"
-                                        value={editingRaffle.total_numbers}
-                                        onChange={(e) => setEditingRaffle({ ...editingRaffle, total_numbers: parseInt(e.target.value) })}
-                                        className="premium-input w-full"
-                                        required
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Cifras a jugar</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="8"
+                                            value={editingRaffle.digits}
+                                            onChange={(e) => setEditingRaffle({ ...editingRaffle, digits: parseInt(e.target.value) || 0 })}
+                                            className="premium-input w-full font-mono"
+                                            required
+                                        />
+                                        <p className="text-[10px] text-primary font-bold ml-1 uppercase tracking-tighter">
+                                            {Math.pow(10, editingRaffle.digits).toLocaleString()} combinaciones
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col justify-end pb-1">
+                                        <label className="flex items-center gap-3 cursor-pointer group mb-1">
+                                            <div className="relative inline-flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="sr-only peer"
+                                                    checked={editingRaffle.use_custom_limit}
+                                                    onChange={(e) => setEditingRaffle({ ...editingRaffle, use_custom_limit: e.target.checked })}
+                                                />
+                                                <div className="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary transition-colors"></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest group-hover:text-white/60 transition-colors">Limitar pool</span>
+                                        </label>
+                                    </div>
                                 </div>
+
+                                {editingRaffle.use_custom_limit && (
+                                    <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                        <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números que van a jugar</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={Math.pow(10, editingRaffle.digits)}
+                                            value={editingRaffle.custom_limit}
+                                            onChange={(e) => setEditingRaffle({ ...editingRaffle, custom_limit: parseInt(e.target.value) || 0 })}
+                                            className="premium-input w-full border-primary/30 focus:border-primary/60"
+                                            required={editingRaffle.use_custom_limit}
+                                        />
+                                        <p className="text-[10px] text-white/30 ml-1">Rango: 0 al {((editingRaffle.custom_limit || 1) - 1).toString().padStart(editingRaffle.digits, '0')}</p>
+                                    </div>
+                                )}
 
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold uppercase tracking-widest text-white/40 ml-1">Números Reservados (Separados por coma)</label>
@@ -1653,43 +2038,124 @@ export default function Dashboard() {
                                     <p className="text-[10px] text-white/30 ml-1">Estos números no se entregarán al azar.</p>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-4">
                                     <label className="flex items-center gap-3 cursor-pointer group">
                                         <div className="relative inline-flex items-center">
                                             <input
                                                 type="checkbox"
                                                 className="sr-only peer"
-                                                checked={editingRaffle.is_paid || false}
-                                                onChange={(e) => setEditingRaffle({ ...editingRaffle, is_paid: e.target.checked })}
+                                                checked={editingRaffle.use_blessed_numbers || false}
+                                                onChange={(e) => setEditingRaffle({ ...editingRaffle, use_blessed_numbers: e.target.checked })}
                                             />
-                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 pointer-events-none group-hover:bg-white/20 transition-colors"></div>
+                                            <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary transition-colors"></div>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-sm text-white select-none">Rifa de Pago</p>
-                                            <p className="text-[10px] text-white/40 select-none">Actívalo para cobrar por ticket</p>
+                                        <div className="flex items-center gap-2">
+                                            <Zap size={16} className="text-primary" />
+                                            <div>
+                                                <p className="font-bold text-sm text-white select-none">Números Bendecidos</p>
+                                                <p className="text-[10px] text-white/40 select-none">Premios instantáneos aleatorios</p>
+                                            </div>
                                         </div>
                                     </label>
 
-                                    {editingRaffle.is_paid && (
-                                        <div className="space-y-2 animate-in fade-in zoom-in duration-300">
-                                            <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={editingRaffle.ticket_price || ''}
-                                                onChange={(e) => {
-                                                    const price = parseInt(e.target.value) || 0;
-                                                    const updatedBundles = (editingRaffle.ticket_bundles || []).map((b: any) => ({
-                                                        ...b,
-                                                        price: b.tickets * price
-                                                    }));
-                                                    setEditingRaffle({ ...editingRaffle, ticket_price: price, ticket_bundles: updatedBundles });
+                                    {editingRaffle.use_blessed_numbers && (
+                                        <div className="space-y-4 animate-in fade-in zoom-in duration-300 pt-2 border-t border-white/5">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cantidad</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingRaffle.blessed_quantity || ''}
+                                                        onChange={(e) => setEditingRaffle({ ...editingRaffle, blessed_quantity: parseInt(e.target.value) || 0 })}
+                                                        className="premium-input w-full text-sm py-2"
+                                                        placeholder="Ej: 10"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold uppercase tracking-widest text-white/40 ml-1">Cada cuanto (Intervalo)</label>
+                                                    <input
+                                                        type="number"
+                                                        value={editingRaffle.blessed_interval || ''}
+                                                        onChange={(e) => setEditingRaffle({ ...editingRaffle, blessed_interval: parseInt(e.target.value) || 0 })}
+                                                        className="premium-input w-full text-sm py-2"
+                                                        placeholder="Ej: 500"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const total = editingRaffle.use_custom_limit ? editingRaffle.custom_limit : Math.pow(10, editingRaffle.digits);
+                                                    const resArr = Array.isArray(editingRaffle.reserved_numbers) 
+                                                        ? editingRaffle.reserved_numbers 
+                                                        : (editingRaffle.reserved_numbers ? editingRaffle.reserved_numbers.split(',').map((n: string) => parseInt(n.trim())).filter((n: number) => !isNaN(n)) : []);
+                                                    const generated = generateBlessedNumbers(editingRaffle.blessed_quantity, editingRaffle.blessed_interval, total, resArr);
+                                                    setEditingRaffle({ ...editingRaffle, blessed_numbers: generated });
                                                 }}
-                                                placeholder="Ej: 10000"
-                                                className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
-                                                required={editingRaffle.is_paid}
-                                            />
+                                                className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-xl border border-primary/20 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Activity size={14} /> GENERAR NÚMEROS
+                                            </button>
+
+                                            {(editingRaffle.blessed_numbers || []).length > 0 && (
+                                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-black/20 rounded-xl scrollbar-hide">
+                                                    {editingRaffle.blessed_numbers.map((num: number) => (
+                                                        <span key={num} className="px-2 py-1 bg-primary/20 text-primary text-[10px] font-mono font-bold rounded-lg border border-primary/30">
+                                                            #{num.toString().padStart(editingRaffle.digits, '0')}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-6 rounded-2xl bg-white/5 border border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-11 h-6 bg-emerald-500 rounded-full relative flex items-center justify-end px-1 border border-emerald-400/50 shadow-[0_0_10px_rgba(16,185,129,0.3)] opacity-50 cursor-not-allowed">
+                                            <div className="w-4 h-4 bg-white rounded-full"></div>
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-sm text-white select-none opacity-50">Rifa de Pago (Siempre Activo)</p>
+                                            <p className="text-[10px] text-emerald-400 font-bold select-none">Solo se permiten rifas monetizadas</p>
+                                        </div>
+                                    </div>
+
+                                    {editingRaffle.is_paid && (
+                                        <>
+                                            <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Precio base por Ticket (COP)</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={editingRaffle.ticket_price || ''}
+                                                    onChange={(e) => {
+                                                        const price = parseInt(e.target.value) || 0;
+                                                        const updatedBundles = (editingRaffle.ticket_bundles || []).map((b: any) => ({
+                                                            ...b,
+                                                            price: b.tickets * price
+                                                        }));
+                                                        setEditingRaffle({ ...editingRaffle, ticket_price: price, ticket_bundles: updatedBundles });
+                                                    }}
+                                                    placeholder="Ej: 10000"
+                                                    className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
+                                                    required={editingRaffle.is_paid}
+                                                />
+                                            </div>
+                                            <div className="space-y-2 animate-in fade-in zoom-in duration-300">
+                                                <label className="text-xs font-bold uppercase tracking-widest text-emerald-400 ml-1">Compra Mínima (Tickets)</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={editingRaffle.min_tickets || ''}
+                                                    onChange={(e) => setEditingRaffle({ ...editingRaffle, min_tickets: parseInt(e.target.value) || 1 })}
+                                                    placeholder="Ej: 1"
+                                                    className="premium-input w-full border-emerald-500/30 focus:border-emerald-500/60 font-mono"
+                                                    required={editingRaffle.is_paid}
+                                                />
+                                            </div>
+                                        </>
                                     )}
                                 </div>
 
